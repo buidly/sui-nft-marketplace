@@ -5,160 +5,204 @@ module nft_marketplace::nft_marketplace {
     // use sui::transfer;
     // use sui::tx_context::{Self, TxContext};
 
-    // Part 2: struct definitions
-    public struct Sword has key, store {
-        id: UID,
-        magic: u64,
-        strength: u64,
+    use std::debug;
+
+    // This is the only dependency you need for events.
+    use sui::event;
+    use sui::sui::SUI;
+
+    // Use this dependency to get a type wrapper for UTF-8 strings
+    use std::string::{Self, utf8};
+    use sui::url::{Self, Url};
+    use sui::package; // For publishing NFT
+    use sui::display; // For displaying NFT image
+    use sui::coin::{Self, Coin};
+    use sui::balance::{Balance};
+
+    // === Errors ===
+
+    const EInvalidAmount: u64 = 0;
+    const EInvalidNft: u64 = 1;
+
+    // ====== Events ======
+
+    public struct NFTMinted has copy, drop {
+        object_id: ID,
+        creator: address,
+        name: string::String,
     }
 
-    public struct Forge has key {
+    // === Structs ===
+
+    public struct TestnetNFT has key, store {
         id: UID,
-        swords_created: u64,
+        name: string::String,
+        description: string::String,
+        url: Url,
+        creator: address,
     }
+
+    public struct Listing has key {
+        id: UID,
+        nft: TestnetNFT,
+        price: u64,
+        owner: address,
+    }
+
+    public struct Bid has key {
+        id: UID,
+        nft_id: ID,
+        balance: Balance<SUI>,
+        owner: address,
+    }
+
+    // resource struct Bid {
+    //     nft: &TestnetNFT,
+    //     price: u64,
+    //     bidder: address,
+    // }
+    //
+    // resource struct Ask {
+    //     nft: &TestnetNFT,
+    //     price: u64,
+    //     seller: address,
+    // }
+
+    // For displaying NFT image
+    public struct NFT_MARKETPLACE has drop {}
 
     // Part 3: Module initializer to be executed when this module is published
-    fun init(ctx: &mut TxContext) {
-        let admin = Forge {
+
+    fun init(otw: NFT_MARKETPLACE, ctx: &mut TxContext) {
+        let keys = vector[
+            utf8(b"name"),
+            utf8(b"description"),
+            utf8(b"url"),
+        ];
+
+        let values = vector[
+            utf8(b"{name}"),
+            utf8(b"{description}"),
+            utf8(b"{url}"),
+        ];
+
+        // Claim the publisher
+        let publisher = package::claim(otw, ctx);
+
+        let mut display = display::new_with_fields<TestnetNFT>(
+            &publisher, keys, values, ctx
+        );
+
+        display::update_version(&mut display);
+
+        transfer::public_transfer(publisher, ctx.sender());
+        transfer::public_transfer(display, ctx.sender());
+    }
+
+    // === Public-View Functions ===
+
+    /// Get the NFT's `name`
+    public fun name(nft: &TestnetNFT): &string::String {
+        &nft.name
+    }
+
+    /// Get the NFT's `description`
+    public fun description(nft: &TestnetNFT): &string::String {
+        &nft.description
+    }
+
+    /// Get the NFT's `url`
+    public fun url(nft: &TestnetNFT): &Url {
+        &nft.url
+    }
+
+    // === Entrypoints  ===
+
+    #[allow(lint(self_transfer))]
+    /// Create a new TestnetNFT
+    public fun mint_to_sender(
+        name: vector<u8>,
+        description: vector<u8>,
+        url: vector<u8>,
+        ctx: &mut TxContext
+    ) {
+        let sender = ctx.sender();
+        let nft = TestnetNFT {
             id: object::new(ctx),
-            swords_created: 0,
+            name: string::utf8(name),
+            description: string::utf8(description),
+            url: url::new_unsafe_from_bytes(url),
+            creator: sender,
         };
 
-        // Transfer the forge object to the module/package publisher
-        transfer::transfer(admin, ctx.sender());
+        debug::print(&nft);
+
+        event::emit(NFTMinted {
+            object_id: object::id(&nft),
+            creator: sender,
+            name: nft.name,
+        });
+
+        transfer::public_transfer(nft, sender);
     }
 
-    // Part 4: Accessors required to read the struct fields
-    public fun magic(self: &Sword): u64 {
-        self.magic
+    /// Permanently delete `nft`
+    public fun burn(nft: TestnetNFT) {
+        let TestnetNFT { id, name: _, description: _, url: _, creator: _ } = nft;
+        id.delete()
     }
 
-    public fun strength(self: &Sword): u64 {
-        self.strength
-    }
+    public fun place_listing(nft: TestnetNFT, price: u64, ctx: &mut TxContext) {
+        let sender = ctx.sender();
 
-    public fun swords_created(self: &Forge): u64 {
-        self.swords_created
-    }
-
-    // Part 5: Public/entry functions (introduced later in the tutorial)
-
-    public fun sword_create(magic: u64, strength: u64, ctx: &mut TxContext): Sword {
-        Sword {
+        let listing = Listing {
             id: object::new(ctx),
-            magic: magic,
-            strength: strength,
-        }
+            nft,
+            price,
+            owner: sender,
+        };
+
+        transfer::share_object(listing);
     }
 
-    public fun new_sword(
-        forge: &mut Forge,
-        magic: u64,
-        strength: u64,
-        ctx: &mut TxContext,
-    ): Sword {
-        forge.swords_created = forge.swords_created + 1;
-        Sword {
+    #[allow(lint(self_transfer))]
+    public fun buy(listing: Listing, coin: Coin<SUI>, ctx: &mut TxContext) {
+        let Listing { id, nft, owner, price } = listing;
+
+        assert!(coin.balance().value() == price, EInvalidAmount);
+
+        transfer::public_transfer(coin, owner);
+        transfer::public_transfer(nft, ctx.sender());
+
+        id.delete();
+    }
+
+    public fun place_bid(nft: &TestnetNFT, coin: Coin<SUI>, ctx: &mut TxContext) {
+        let sender = ctx.sender();
+
+        let bid = Bid {
             id: object::new(ctx),
-            magic: magic,
-            strength: strength,
-        }
+            nft_id: object::id(nft),
+            balance: coin.into_balance(),
+            owner: sender
+        };
+
+        transfer::share_object(bid);
     }
 
-    // Part 6: Tests
+    #[allow(lint(self_transfer))]
+    public fun accept_bid(bid: Bid, nft: TestnetNFT, ctx: &mut TxContext) {
+        let Bid { id, nft_id, balance, owner } = bid;
 
-    #[test]
-    fun test_module_init() {
-        use sui::test_scenario;
+        assert!(nft_id == object::id(&nft), EInvalidNft);
 
-        // Create test addresses representing users
-        let admin = @0xAD;
-        let initial_owner = @0xCAFE;
+        transfer::public_transfer(nft, owner);
+        transfer::public_transfer(coin::from_balance(balance, ctx), ctx.sender());
 
-        // First transaction to emulate module initialization
-        let mut scenario = test_scenario::begin(admin);
-        {
-            init(scenario.ctx());
-        };
-
-        // Second transaction to check if the forge has been created
-        // and has initial value of zero swords created
-        scenario.next_tx(admin);
-        {
-            // Extract the Forge object
-            let forge = scenario.take_from_sender<Forge>();
-            // Verify number of created swords
-            assert!(forge.swords_created() == 0, 1);
-            // Return the Forge object to the object pool
-            scenario.return_to_sender(forge);
-        };
-
-        // Third transaction executed by admin to create the sword
-        scenario.next_tx(admin);
-        {
-            let mut forge = scenario.take_from_sender<Forge>();
-            // Create the sword and transfer it to the initial owner
-            let sword = forge.new_sword(42, 7, scenario.ctx());
-            transfer::public_transfer(sword, initial_owner);
-            scenario.return_to_sender(forge);
-        };
-        scenario.end();
+        id.delete();
     }
 
-    #[test]
-    fun test_sword_create() {
-        // Create a dummy TxContext for testing
-        let mut ctx = tx_context::dummy();
+    // === Test Functions ===
 
-        // Create a sword
-        let sword = Sword {
-            id: object::new(&mut ctx),
-            magic: 42,
-            strength: 7,
-        };
-
-        // Check if accessor functions return correct values
-        assert!(sword.magic() == 42 && sword.strength() == 7, 1);
-
-        let dummy_address = @0xCAFE;
-        transfer::public_transfer(sword, dummy_address);
-    }
-
-    #[test]
-    fun test_sword_transactions() {
-        use sui::test_scenario;
-
-        // Create test addresses representing users
-        let initial_owner = @0xCAFE;
-        let final_owner = @0xFACE;
-
-        // First transaction executed by initial owner to create the sword
-        let mut scenario = test_scenario::begin(initial_owner);
-        {
-            // Create the sword and transfer it to the initial owner
-            let sword = sword_create(42, 7, scenario.ctx());
-            transfer::public_transfer(sword, initial_owner);
-        };
-
-        // Second transaction executed by the initial sword owner
-        scenario.next_tx(initial_owner);
-        {
-            // Extract the sword owned by the initial owner
-            let sword = scenario.take_from_sender<Sword>();
-            // Transfer the sword to the final owner
-            transfer::public_transfer(sword, final_owner);
-        };
-
-        // Third transaction executed by the final sword owner
-        scenario.next_tx(final_owner);
-        {
-            // Extract the sword owned by the final owner
-            let sword = scenario.take_from_sender<Sword>();
-            // Verify that the sword has expected properties
-            assert!(sword.magic() == 42 && sword.strength() == 7, 1);
-            // Return the sword to the object pool (it cannot be simply "dropped")
-            scenario.return_to_sender(sword)
-        };
-        scenario.end();
-    }
+    // TODO
 }

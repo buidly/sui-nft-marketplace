@@ -1,13 +1,16 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
 import "@mysten/dapp-kit/dist/index.css";
 import "@radix-ui/themes/styles.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
 
 import { SuiClientProvider, WalletProvider } from "@mysten/dapp-kit";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Theme } from "@radix-ui/themes";
-import App from "./App.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { networkConfig } from "./networkConfig.ts";
+import routes from "./routes.ts";
+import { Layout } from "./Layout.tsx";
+import "./index.css";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +20,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networkConfig} defaultNetwork="devnet">
           <WalletProvider autoConnect>
-            <App />
+            <Router>
+              <Layout>
+                <Routes>
+                  {routes.map((route, index) => (
+                    <Route
+                      path={route.path}
+                      key={"route-key-" + index}
+                      element={<route.component />}
+                    />
+                  ))}
+                </Routes>
+              </Layout>
+            </Router>
           </WalletProvider>
         </SuiClientProvider>
       </QueryClientProvider>

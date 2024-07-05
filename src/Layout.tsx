@@ -2,6 +2,8 @@ import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { routeNames } from "./routes";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.min.css";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -11,6 +13,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="w-full h-[1px] bg-slate-100 mb-3" />
         <main className="d-flex flex-column flex-grow-1">{children}</main>
       </div>
+      <ToastContainer />
     </>
   );
 };

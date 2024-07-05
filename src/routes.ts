@@ -1,4 +1,5 @@
 import { Home, NftDetails } from "./pages";
+import { NftListing } from "./pages/NftListing/NftListing";
 
 export interface RouteType {
   path: string;
@@ -8,6 +9,7 @@ export interface RouteType {
 export const routeNames = {
   home: "/",
   nftDetails: "/details/:objectId",
+  placeListing: "listing"
 };
 
 const routes: RouteType[] = [
@@ -18,6 +20,10 @@ const routes: RouteType[] = [
   {
     path: routeNames.nftDetails,
     component: NftDetails,
+  },
+  {
+    path: routeNames.placeListing,
+    component: NftListing,
   },
 ];
 

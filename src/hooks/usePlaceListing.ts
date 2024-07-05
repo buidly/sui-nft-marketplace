@@ -1,6 +1,7 @@
 import { useCurrentAccount, useSignAndExecuteTransactionBlock, useSuiClient } from "@mysten/dapp-kit";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
+import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 
 export const usePlaceListing = (onListed: (id: string) => void) => {
   const account = useCurrentAccount();
@@ -8,7 +9,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const placeListing = (objectId: string) => {
+  const placeListing = (objectId: string, price: number) => {
     if (!account) {
       return;
     }
@@ -16,7 +17,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
     const txb = new TransactionBlock();
 
     txb.moveCall({
-      arguments: [txb.pure(objectId), txb.pure.u64(1000000)],
+      arguments: [txb.pure(objectId), txb.pure.u64(price * Number(MIST_PER_SUI))],
       target: `${marketplacePackageId}::nft_marketplace::place_listing`,
     });
 

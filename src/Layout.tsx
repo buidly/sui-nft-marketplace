@@ -1,8 +1,7 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { routeNames } from "./routes";
-import { ListNftModal } from "./components/ListNftModal";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -20,28 +19,11 @@ export const NavBar = () => {
   const account = useCurrentAccount();
   const navigate = useNavigate();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
   const onClick = () => {
-    if (location.pathname.includes(routeNames.nftDetails)) {
-      navigate(routeNames.home);
+    if (location.pathname.includes(routeNames.placeListing)) {
       return;
     }
-
-    if (location.pathname.includes("/details")) {
-      navigate(routeNames.home);
-      return;
-    }
-
-    openModal();
+    navigate(routeNames.placeListing);
   };
 
   return (
@@ -54,13 +36,9 @@ export const NavBar = () => {
             onClick={onClick}
             className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
           >
-            {location.pathname.includes(routeNames.nftDetails) ||
-            location.pathname.includes("/details")
-              ? "Home"
-              : "List NFT"}
+            List NFTs
           </button>
         )}
-        <ListNftModal isOpen={isModalOpen} onClose={closeModal} />
       </div>
     </div>
   );

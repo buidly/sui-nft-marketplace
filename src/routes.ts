@@ -1,4 +1,4 @@
-import { Home } from "./pages";
+import { Home, ListNft, NftDetails } from "./pages";
 
 export interface RouteType {
   path: string;
@@ -6,13 +6,23 @@ export interface RouteType {
 }
 
 export const routeNames = {
-  home: '/',
+  home: "/",
+  listNft: "/list-nft",
+  nftDetails: "/nft-details",
 };
 
 const routes: RouteType[] = [
   {
     path: routeNames.home,
-    component: Home
+    component: Home,
+  },
+  {
+    path: routeNames.listNft,
+    component: ListNft,
+  },
+  {
+    path: routeNames.nftDetails,
+    component: NftDetails,
   },
 ];
 

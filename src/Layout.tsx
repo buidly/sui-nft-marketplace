@@ -36,6 +36,11 @@ export const NavBar = () => {
       return;
     }
 
+    if (location.pathname.includes("/details")) {
+      navigate(routeNames.home);
+      return;
+    }
+
     openModal();
   };
 
@@ -49,7 +54,8 @@ export const NavBar = () => {
             onClick={onClick}
             className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
           >
-            {location.pathname.includes(routeNames.nftDetails)
+            {location.pathname.includes(routeNames.nftDetails) ||
+            location.pathname.includes("/details")
               ? "Home"
               : "List NFT"}
           </button>

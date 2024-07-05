@@ -7,7 +7,7 @@ export interface RouteType {
 
 export const routeNames = {
   home: "/",
-  nftDetails: "/nft-details",
+  nftDetails: "/details/:objectId",
 };
 
 const routes: RouteType[] = [

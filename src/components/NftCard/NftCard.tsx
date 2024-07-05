@@ -1,11 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { routeNames } from "../../routes";
 
+const mockupObjectId =
+  "0x3ab9896e631bbcfec4a6bed0e87a8a8a6a4becdaef03eb1cf4d501fe48e358e3";
+
 export const NftCard = () => {
   const navigate = useNavigate();
   return (
     <div
-      onClick={() => navigate(routeNames.nftDetails)}
+      onClick={() =>
+        navigate(routeNames.nftDetails.replace(":objectId", mockupObjectId))
+      }
       className="flex flex-col p-3 rounded-lg shadow-md bg-gray-700 bg-opacity-25 hover:bg-opacity-75 transition duration-300 min-w-[250px] min-h-[320px] cursor-pointer"
     >
       <img

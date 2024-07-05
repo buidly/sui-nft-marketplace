@@ -16,10 +16,9 @@ export const useGetAccountNfts = () => {
     },
     { enabled: !!account }
   );
-  console.log({ data });
+
   return {
     nfts: data?.data?.filter(obj => {
-      console.log({ type: obj.data?.type });
       const type = obj.data?.content?.dataType === "moveObject"
         ? (obj.data.content.type as any)
         : null;

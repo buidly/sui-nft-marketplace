@@ -29,6 +29,7 @@ export const NftListing = () => {
       <div className="grid-auto-fit mt-3">
         {nfts.map((nft) => (
           <SelectNftCard
+            key={nft.id}
             nft={nft}
             onListNft={function (nft: Nft, price: number): void {
               placeListing(nft.id, price);

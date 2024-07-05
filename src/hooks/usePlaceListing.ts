@@ -7,6 +7,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
+  const listingsObjectId = useNetworkVariable("listingsObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
   const placeListing = (objectId: string, price: number) => {
@@ -17,9 +18,15 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
     const txb = new TransactionBlock();
 
     txb.moveCall({
-      arguments: [txb.pure(objectId), txb.pure.u64(price * Number(MIST_PER_SUI))],
+      arguments: [
+        txb.object(listingsObjectId),
+        txb.pure(objectId),
+        txb.pure.u64(price * Number(MIST_PER_SUI))
+      ],
       target: `${marketplacePackageId}::nft_marketplace::place_listing`,
     });
+
+    txb.setGasBudget(100000000);
 
     signAndExecute(
       {
@@ -44,6 +51,9 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
               }
             });
         },
+        onError: (e) => {
+          console.log({ e });
+        }
       },
     );
   };

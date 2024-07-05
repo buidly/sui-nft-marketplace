@@ -40,20 +40,22 @@ export const NavBar = () => {
   };
 
   return (
-    <div className="flex flex-row px-3 py-4 w-full items-center">
+    <div className="flex flex-col md:flex-row px-3 py-4 w-full items-center">
       <span className="text-lg font-bold grow">NFT Marketplace</span>
-      <ConnectButton />
-      {account && (
-        <button
-          onClick={onClick}
-          className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
-        >
-          {location.pathname.includes(routeNames.nftDetails)
-            ? "Home"
-            : "List NFT"}
-        </button>
-      )}
-      <ListNftModal isOpen={isModalOpen} onClose={closeModal} />
+      <div className="flex flex-col md:flex-row gap-2">
+        <ConnectButton />
+        {account && (
+          <button
+            onClick={onClick}
+            className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
+          >
+            {location.pathname.includes(routeNames.nftDetails)
+              ? "Home"
+              : "List NFT"}
+          </button>
+        )}
+        <ListNftModal isOpen={isModalOpen} onClose={closeModal} />
+      </div>
     </div>
   );
 };

@@ -29,15 +29,15 @@ export const NftDetails = () => {
     }
   };
   return (
-    <div className="flex h-screen">
-      <div className="w-1/2">
+    <div className="flex flex-col-reverse md:flex-row">
+      <div className="w-full md:w-1/2 p-6">
         <img
           src="https://i.seadn.io/s/raw/files/6a45583bd2683834496cddf0c425338a.png?auto=format&dpr=1&w=1000"
           alt="NFT"
           className="w-full h-4/5 object-cover"
         />
       </div>
-      <div className="w-1/2 p-6 flex flex-col">
+      <div className="w-full md:w-1/2 p-6 flex flex-col">
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
           <h2 className="text-xl font-bold">COLORPEPE #3278</h2>
         </div>

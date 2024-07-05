@@ -5,6 +5,7 @@ import {
 } from "@mysten/dapp-kit";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
+import { toast } from "react-toastify";
 
 export const useBuyNft = (onBuy: () => void) => {
   const account = useCurrentAccount();
@@ -42,6 +43,14 @@ export const useBuyNft = (onBuy: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
+              toast.success("Nft bought with success.", {
+                autoClose: 3000,
+                position: "bottom-right",
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: false,
+              });
               onBuy();
             });
         },

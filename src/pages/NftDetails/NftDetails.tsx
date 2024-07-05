@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useGetNftDetails } from "../../hooks";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import BigNumber from "bignumber.js";
+import { useBuyNft } from "../../hooks/useBuyNft";
+import { routeNames } from "../../routes";
+import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 
 interface Bid {
   name: string;
@@ -17,7 +19,12 @@ const mockupBids: Bid[] = [
 export const NftDetails = () => {
   const { objectId } = useParams<{ objectId: string }>();
   const account = useCurrentAccount();
+  const navigate = useNavigate();
   const { data, isPending, error } = useGetNftDetails(objectId!);
+  const onBuy = () => {
+    navigate(routeNames.home);
+  };
+  const buy = useBuyNft(onBuy);
 
   const [bids, setBids] = useState<Bid[]>(mockupBids);
   const [showBidField, setShowBidField] = useState(false);
@@ -34,7 +41,7 @@ export const NftDetails = () => {
       alert("Bid must be higher than the current highest bid.");
     }
   };
-  if (isPending || !data || !account) {
+  if (isPending || !data || !account || !data.data) {
     return (
       <div className="flex justify-center items-center w-full">
         <svg
@@ -61,9 +68,8 @@ export const NftDetails = () => {
     data.data?.content?.dataType === "moveObject"
       ? (data.data.content.fields as any)
       : null;
-  console.log({ nftFields });
 
-  const priceDenom = new BigNumber(nftFields.price ?? 0).shiftedBy(-9);
+  const priceDenom = nftFields.price / Number(MIST_PER_SUI);
 
   const nftOwner = data.data?.owner as any;
 
@@ -84,11 +90,14 @@ export const NftDetails = () => {
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
           <h1 className="text-2xl font-bold mb-4">Trade</h1>
           <p className="text-sm mb-4">
-            Current Price: {priceDenom.toFixed()} SUI ($
-            {priceDenom.times(1.2).toFixed(2)})
+            Current Price: {priceDenom} SUI ($
+            {priceDenom * 1.2})
           </p>
           <div className="flex space-x-4 mb-4">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+              onClick={() => buy(data.data?.objectId ?? "", nftFields.price)}
+            >
               Buy
             </button>
             <button

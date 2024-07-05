@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { routeNames } from "../../routes";
 
 const mockupObjectId =
-  "0x3ab9896e631bbcfec4a6bed0e87a8a8a6a4becdaef03eb1cf4d501fe48e358e3";
+  "0xdbddf0dd0707f1c34221682abd7fd1b3181db8cf27b6e5ff1ffc7348e6b2aa66";
 
 export const NftCard = () => {
   const navigate = useNavigate();

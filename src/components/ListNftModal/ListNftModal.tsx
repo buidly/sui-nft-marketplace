@@ -1,4 +1,8 @@
+import { isValidSuiObjectId } from "@mysten/sui.js/utils";
 import React, { FormEvent, useState } from "react";
+import { usePlaceListing } from "../../hooks/usePlaceListing";
+import { useNavigate } from "react-router-dom";
+import { routeNames } from "../../routes";
 
 interface ListNftModalProps {
   isOpen: boolean;
@@ -9,8 +13,13 @@ export const ListNftModal: React.FC<ListNftModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const navigate = useNavigate();
+  const placeListing = usePlaceListing((id) => {
+    navigate(routeNames.nftDetails.replace(":objectId", id));
+    onClose();
+  });
   const [name, setName] = useState("");
-  const [supply, setSupply] = useState("");
+  const [objectId, setObjectId] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
 
@@ -24,30 +33,29 @@ export const ListNftModal: React.FC<ListNftModalProps> = ({
   };
 
   const isFormValid = () => {
-    return name.length >= 5 && parseInt(supply) > 10 && isValidUrl(imageUrl);
+    return (
+      name.length >= 5 && isValidSuiObjectId(objectId) && isValidUrl(imageUrl)
+    );
   };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     console.log({
       name,
-      supply,
+      objectId,
       description,
       imageUrl,
     });
-    onClose();
+    placeListing(objectId);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
-      <div className="max-w-md mx-auto mt-10 p-6 bg-gray-700 rounded-lg shadow-md">
+      <div className="max-w-md mx-auto mt-10 p-6 bg-gray-700 rounded-lg shadow-md min-w-[500px]">
         <h1 className="text-2xl font-bold mb-4 text-white">Create a NFT</h1>
-        <h2 className="text-xl mb-6 text-white">
-          Once your item is minted you will not be able to change any of its
-          information.
-        </h2>
+        <h2 className="text-xl mb-6 text-white">List NFT</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-white">Name</label>
@@ -62,15 +70,17 @@ export const ListNftModal: React.FC<ListNftModalProps> = ({
             />
           </div>
           <div className="mb-4">
-            <label className="block text-white">Supply</label>
+            <label className="block text-white">ObjectId</label>
             <input
-              type="number"
+              type="text"
               className={`w-full px-3 py-2 border-2 rounded-lg ${
-                supply && parseInt(supply) < 10 ? "border-red-400" : ""
+                objectId && !isValidSuiObjectId(objectId)
+                  ? "border-red-400"
+                  : ""
               }`}
-              value={supply}
-              onChange={(e) => setSupply(e.target.value)}
-              placeholder="A supply of minimum 10."
+              value={objectId}
+              onChange={(e) => setObjectId(e.target.value)}
+              placeholder="ObjectId"
             />
           </div>
           <div className="mb-4">

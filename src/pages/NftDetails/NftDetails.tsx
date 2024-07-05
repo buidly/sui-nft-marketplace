@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useGetNftDetails } from "../../hooks";
 import { useCurrentAccount } from "@mysten/dapp-kit";
+import BigNumber from "bignumber.js";
 
 interface Bid {
   name: string;
@@ -21,8 +22,6 @@ export const NftDetails = () => {
   const [bids, setBids] = useState<Bid[]>(mockupBids);
   const [showBidField, setShowBidField] = useState(false);
   const [newBid, setNewBid] = useState("");
-  const [currentPrice, setCurrentPrice] = useState(200);
-  const usdPrice = currentPrice * 1.2;
 
   const highestBid = Math.max(...bids.map((bid) => bid.bidValue), 0);
 
@@ -62,6 +61,9 @@ export const NftDetails = () => {
     data.data?.content?.dataType === "moveObject"
       ? (data.data.content.fields as any)
       : null;
+  console.log({ nftFields });
+
+  const priceDenom = new BigNumber(nftFields.price ?? 0).shiftedBy(-9);
 
   const nftOwner = data.data?.owner as any;
 
@@ -69,20 +71,21 @@ export const NftDetails = () => {
     <div className="flex flex-col-reverse md:flex-row">
       <div className="w-full md:w-1/2 p-6">
         <img
-          src={nftFields.url}
+          src={nftFields.nft.fields.url}
           alt="NFT"
           className="w-full h-4/5 object-cover"
         />
       </div>
       <div className="w-full md:w-1/2 p-6 flex flex-col">
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
-          <h2 className="text-xl font-bold">{nftFields.name}</h2>
-          <p className="text-md mt-1">{nftFields.description}</p>
+          <h2 className="text-xl font-bold">{nftFields.nft.fields.name}</h2>
+          <p className="text-md mt-1">{nftFields.nft.fields.description}</p>
         </div>
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
           <h1 className="text-2xl font-bold mb-4">Trade</h1>
           <p className="text-sm mb-4">
-            Current Price: {currentPrice} SUI (${usdPrice.toFixed(2)})
+            Current Price: {priceDenom.toFixed()} SUI ($
+            {priceDenom.times(1.2).toFixed(2)})
           </p>
           <div className="flex space-x-4 mb-4">
             <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">

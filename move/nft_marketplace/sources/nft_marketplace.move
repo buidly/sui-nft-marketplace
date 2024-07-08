@@ -94,8 +94,7 @@ module nft_marketplace::nft_marketplace {
         creator: address,
     }
 
-    // public struct Listing<phantom T: key + store> has key {
-    public struct Listing has key {
+    public struct Listing<phantom T: key + store> has key {
         id: UID,
         price: u64,
         owner: address,
@@ -224,7 +223,7 @@ module nft_marketplace::nft_marketplace {
     public fun place_listing<N: key + store>(marketplace: &mut Marketplace, nft: N, price: u64, ctx: &mut TxContext) {
         let sender = ctx.sender();
 
-        let mut listing = Listing {
+        let mut listing = Listing<N> {
             id: object::new(ctx),
             price,
             owner: sender,
@@ -249,7 +248,7 @@ module nft_marketplace::nft_marketplace {
 
     public fun cancel_listing<N: key + store>(
         marketplace: &mut Marketplace,
-        mut listing: Listing,
+        mut listing: Listing<N>,
         ctx: &mut TxContext
     ): N {
         let sender = ctx.sender();
@@ -276,7 +275,7 @@ module nft_marketplace::nft_marketplace {
 
     public fun buy<N: key + store>(
         marketplace: &mut Marketplace,
-        mut listing: Listing,
+        mut listing: Listing<N>,
         coin: Coin<SUI>,
         ctx: &mut TxContext
     ): N {
@@ -497,10 +496,10 @@ module nft_marketplace::nft_marketplace {
         assert_eq(effects.num_user_events(), 1); // 1 event emitted
 
         {
-            let mut listing_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
             assert!(listing_id.is_some(), 1);
 
-            let listing: Listing = scenario.take_shared_by_id(listing_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing_id.extract());
 
             assert_eq(listing.owner, initial_owner);
             assert_eq(listing.price, 10);
@@ -553,10 +552,10 @@ module nft_marketplace::nft_marketplace {
             let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
 
-            let mut listing_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
             assert!(listing_id.is_some(), 1);
 
-            let listing: Listing = scenario.take_shared_by_id(listing_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing_id.extract());
 
             // Can not cancel the listing since it is not the owner
             let nft: TestnetNFT = cancel_listing(&mut marketplace, listing, scenario.ctx());
@@ -602,10 +601,10 @@ module nft_marketplace::nft_marketplace {
             let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
 
-            let mut listing_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
             assert!(listing_id.is_some(), 1);
 
-            let listing: Listing = scenario.take_shared_by_id(listing_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing_id.extract());
 
             let nft: TestnetNFT = cancel_listing(&mut marketplace, listing, scenario.ctx());
 
@@ -669,7 +668,7 @@ module nft_marketplace::nft_marketplace {
         };
 
         // Get id of 1st listing before listing 2 transaction is finished
-        let mut listing1_id = test_scenario::most_recent_id_shared<Listing>();
+        let mut listing1_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
         assert!(listing1_id.is_some(), 1);
 
         // Cancel listing 1
@@ -678,9 +677,9 @@ module nft_marketplace::nft_marketplace {
             let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
 
-            let mut listing2_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing2_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
 
-            let listing: Listing = scenario.take_shared_by_id(listing1_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing1_id.extract());
 
             let nft: TestnetNFT = cancel_listing(&mut marketplace, listing, scenario.ctx());
 
@@ -748,7 +747,7 @@ module nft_marketplace::nft_marketplace {
         };
 
         // Get id of 1st listing before listing 2 transaction is finished
-        let mut listing1_id = test_scenario::most_recent_id_shared<Listing>();
+        let mut listing1_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
         assert!(listing1_id.is_some(), 1);
 
         // Cancel listing 2
@@ -757,9 +756,9 @@ module nft_marketplace::nft_marketplace {
             let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
 
-            let mut listing2_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing2_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
 
-            let listing: Listing = scenario.take_shared_by_id(listing2_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing2_id.extract());
 
             let nft: TestnetNFT = cancel_listing(&mut marketplace, listing, scenario.ctx());
 
@@ -828,10 +827,10 @@ module nft_marketplace::nft_marketplace {
             assert!(marketplace_id.is_some(), 1);
 
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-            let mut listing_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
             assert!(listing_id.is_some(), 1);
 
-            let listing: Listing = scenario.take_shared_by_id(listing_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing_id.extract());
             let coin = scenario.take_from_sender<Coin<SUI>>();
 
             let nft: TestnetNFT = buy(&mut marketplace, listing, coin, scenario.ctx());
@@ -888,10 +887,10 @@ module nft_marketplace::nft_marketplace {
             assert!(marketplace_id.is_some(), 1);
 
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-            let mut listing_id = test_scenario::most_recent_id_shared<Listing>();
+            let mut listing_id = test_scenario::most_recent_id_shared<Listing<TestnetNFT>>();
             assert!(listing_id.is_some(), 1);
 
-            let listing: Listing = scenario.take_shared_by_id(listing_id.extract());
+            let listing: Listing<TestnetNFT> = scenario.take_shared_by_id(listing_id.extract());
             let coin = scenario.take_from_sender<Coin<SUI>>();
 
             let nft: TestnetNFT = buy(&mut marketplace, listing, coin, scenario.ctx());

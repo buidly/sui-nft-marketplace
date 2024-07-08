@@ -8,16 +8,12 @@ import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 import { useCancelListing } from "../../hooks/useCancelListing";
 import BigNumber from "bignumber.js";
 import { Loader } from "../../components";
+import { usePlaceBid } from "../../hooks/usePlaceBid";
 
 interface Bid {
   name: string;
   bidValue: number;
 }
-
-const mockupBids: Bid[] = [
-  { name: "Bidder1", bidValue: 100 },
-  { name: "Bidder2", bidValue: 150 },
-];
 
 export const NftDetails = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -30,21 +26,22 @@ export const NftDetails = () => {
   const cancelListing = useCancelListing(() => {
     navigate(routeNames.home);
   });
+  const placeBid = usePlaceBid(() => {
+    // TODO Refresh bids
+  });
 
-  const [bids, setBids] = useState<Bid[]>(mockupBids);
+  const [bids, setBids] = useState<Bid[]>([]);
   const [showBidField, setShowBidField] = useState(false);
   const [newBid, setNewBid] = useState("");
 
-  const highestBid = Math.max(...bids.map((bid) => bid.bidValue), 0);
-
   const handleBid = () => {
-    if (parseFloat(newBid) > highestBid) {
-      setBids([...bids, { name: "You", bidValue: parseFloat(newBid) }]);
-      setShowBidField(false);
-      setNewBid("");
-    } else {
-      alert("Bid must be higher than the current highest bid.");
+    if (!nft || newBid.length === 0) {
+      return;
     }
+
+    placeBid(nft?.id, newBid);
+    setShowBidField(false);
+    setNewBid("");
   };
 
   if (isPending) {
@@ -105,9 +102,9 @@ export const NftDetails = () => {
             <div className="mb-4">
               <input
                 type="number"
-                min={highestBid + 1}
+                min={0}
                 className="w-full px-3 py-2 border rounded-lg"
-                placeholder={`Minimum bid: ${highestBid + 1} SUI`}
+                placeholder={`Bid amount`}
                 value={newBid}
                 onChange={(e) => setNewBid(e.target.value)}
               />
@@ -120,13 +117,6 @@ export const NftDetails = () => {
             </div>
           )}
         </div>
-        {nft.owner === account?.address && (
-          <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
-              Accept bid
-            </button>
-          </div>
-        )}
         <div className="bg-gray-700 rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4">Existing Bids</h2>
           <div className="space-y-4">
@@ -137,6 +127,11 @@ export const NftDetails = () => {
               >
                 <span>{bid.name}</span>
                 <span className="font-bold">${bid.bidValue}</span>
+                {nft.owner === account?.address && (
+                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                    Accept bid
+                  </button>
+                )}
               </div>
             ))}
           </div>

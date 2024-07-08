@@ -42,7 +42,7 @@ export const useGetNftDetails = (objectId: string) => {
     }
 
     return {
-      id: nftFields.id,
+      id: nftFields.id.id,
       name: nftFields.name,
       description: nftFields.description,
       url: nftFields.url,

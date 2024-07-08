@@ -6,6 +6,8 @@ import {
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
 import { toast } from "react-toastify";
+import BigNumber from "bignumber.js";
+import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 
 export const usePlaceBid = (onPlaceBid: () => void) => {
   const account = useCurrentAccount();
@@ -20,10 +22,10 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
     }
     const txb = new TransactionBlock();
 
-    const [coin] = txb.splitCoins(txb.gas, [BigInt(price)]);
-
+    const [coin] = txb.splitCoins(txb.gas, [new BigNumber(price).multipliedBy(MIST_PER_SUI.toString()).toFixed()]);
+    console.log({ objectId });
     txb.moveCall({
-      arguments: [txb.object(listingsObjectId), txb.pure(objectId), coin],
+      arguments: [txb.object(listingsObjectId), txb.pure.id(objectId), coin],
       target: `${marketplacePackageId}::nft_marketplace::place_bid`,
     });
 

@@ -94,11 +94,12 @@ module nft_marketplace::nft_marketplace {
         creator: address,
     }
 
+    // public struct Listing<phantom T: key + store> has key {
     public struct Listing has key {
         id: UID,
         price: u64,
         owner: address,
-        // nft: T: TestnetNFT - dynamic field to still have NFT accesible by id
+        // nft: T: key + store - dynamic field to still have NFT accesible by id
     }
 
     public struct Bid has key {
@@ -220,7 +221,7 @@ module nft_marketplace::nft_marketplace {
         id.delete()
     }
 
-    public fun place_listing(marketplace: &mut Marketplace, nft: TestnetNFT, price: u64, ctx: &mut TxContext) {
+    public fun place_listing<N: key + store>(marketplace: &mut Marketplace, nft: N, price: u64, ctx: &mut TxContext) {
         let sender = ctx.sender();
 
         let mut listing = Listing {
@@ -246,16 +247,16 @@ module nft_marketplace::nft_marketplace {
         transfer::share_object(listing);
     }
 
-    public fun cancel_listing(
+    public fun cancel_listing<N: key + store>(
         marketplace: &mut Marketplace,
         mut listing: Listing,
         ctx: &mut TxContext
-    ): TestnetNFT {
+    ): N {
         let sender = ctx.sender();
 
         assert!(listing.owner == sender, EInvalidOwner);
 
-        let nft: TestnetNFT = dof::remove(&mut listing.id, b"nft");
+        let nft: N = dof::remove(&mut listing.id, b"nft");
 
         let Listing { id, owner, price } = listing;
 
@@ -273,13 +274,13 @@ module nft_marketplace::nft_marketplace {
         nft
     }
 
-    public fun buy(
+    public fun buy<N: key + store>(
         marketplace: &mut Marketplace,
         mut listing: Listing,
         coin: Coin<SUI>,
         ctx: &mut TxContext
-    ): TestnetNFT {
-        let nft: TestnetNFT = dof::remove(&mut listing.id, b"nft");
+    ): N {
+        let nft: N = dof::remove(&mut listing.id, b"nft");
 
         let Listing { id, owner, price } = listing;
 
@@ -348,10 +349,10 @@ module nft_marketplace::nft_marketplace {
         coin::from_balance(balance, ctx)
     }
 
-    public fun accept_bid(
+    public fun accept_bid<N: key + store>(
         marketplace: &mut Marketplace,
         bid: Bid,
-        nft: TestnetNFT,
+        nft: N,
         ctx: &mut TxContext
     ): Coin<SUI> {
         let Bid { id, nft_id, balance, owner } = bid;

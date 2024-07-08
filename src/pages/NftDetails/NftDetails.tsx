@@ -5,6 +5,8 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useBuyNft } from "../../hooks/useBuyNft";
 import { routeNames } from "../../routes";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
+import { useCancelListing } from "../../hooks/useCancelListing";
+import BigNumber from "bignumber.js";
 
 interface Bid {
   name: string;
@@ -20,11 +22,13 @@ export const NftDetails = () => {
   const { objectId } = useParams<{ objectId: string }>();
   const account = useCurrentAccount();
   const navigate = useNavigate();
-  const { data, isPending, error } = useGetNftDetails(objectId!);
-  const onBuy = () => {
+  const { nft, isPending, error } = useGetNftDetails(objectId!);
+  const buy = useBuyNft(() => {
     navigate(routeNames.home);
-  };
-  const buy = useBuyNft(onBuy);
+  });
+  const cancelListing = useCancelListing(() => {
+    navigate(routeNames.home);
+  });
 
   const [bids, setBids] = useState<Bid[]>(mockupBids);
   const [showBidField, setShowBidField] = useState(false);
@@ -41,7 +45,8 @@ export const NftDetails = () => {
       alert("Bid must be higher than the current highest bid.");
     }
   };
-  if (isPending || !data || !account || !data.data) {
+
+  if (isPending) {
     return (
       <div className="flex justify-center items-center w-full">
         <svg
@@ -64,39 +69,36 @@ export const NftDetails = () => {
     );
   }
 
-  const nftFields =
-    data.data?.content?.dataType === "moveObject"
-      ? (data.data.content.fields as any)
-      : null;
+  if (error || !nft) {
+    return (
+      <span className="text-lg font-bold">Could not fetch NFT details</span>
+    );
+  }
 
-  const priceDenom = nftFields.price / Number(MIST_PER_SUI);
-
-  const nftOwner = data.data?.owner as any;
+  const priceDenom = new BigNumber(nft.price ?? 0).dividedBy(
+    MIST_PER_SUI.toString(),
+  );
 
   return (
     <div className="flex flex-col-reverse md:flex-row">
       <div className="w-full md:w-1/2 p-6">
-        <img
-          src={nftFields.nft.fields.url}
-          alt="NFT"
-          className="w-full h-4/5 object-cover"
-        />
+        <img src={nft.url} alt="NFT" className="w-full h-4/5 object-cover" />
       </div>
       <div className="w-full md:w-1/2 p-6 flex flex-col">
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
-          <h2 className="text-xl font-bold">{nftFields.nft.fields.name}</h2>
-          <p className="text-md mt-1">{nftFields.nft.fields.description}</p>
+          <h2 className="text-xl font-bold">{nft.name}</h2>
+          <p className="text-md mt-1">{nft.description}</p>
         </div>
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
           <h1 className="text-2xl font-bold mb-4">Trade</h1>
           <p className="text-sm mb-4">
-            Current Price: {priceDenom} SUI ($
-            {priceDenom * 1.2})
+            Current Price: {priceDenom.toFixed()} SUI ($
+            {priceDenom.multipliedBy(1.2).toFixed()})
           </p>
           <div className="flex space-x-4 mb-4">
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-              onClick={() => buy(data.data?.objectId ?? "", nftFields.price)}
+              onClick={() => buy(nft.id, nft.price)}
             >
               Buy
             </button>
@@ -106,6 +108,14 @@ export const NftDetails = () => {
             >
               Bid
             </button>
+            {nft.creator === account?.address && (
+              <button
+                className={`px-4 py-2 bg-red-500 text-white rounded-lg`}
+                onClick={() => cancelListing(nft.id)}
+              >
+                Cancel listing
+              </button>
+            )}
           </div>
           {showBidField && (
             <div className="mb-4">
@@ -126,7 +136,7 @@ export const NftDetails = () => {
             </div>
           )}
         </div>
-        {nftOwner?.AddressOwner === account.address && (
+        {nft.creator === account?.address && (
           <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
             <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
               Accept bid

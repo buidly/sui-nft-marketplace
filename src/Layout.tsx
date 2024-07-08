@@ -1,6 +1,6 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { routeNames } from "./routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
@@ -31,7 +31,9 @@ export const NavBar = () => {
 
   return (
     <div className="flex flex-col md:flex-row px-3 py-4 w-full items-center">
-      <span className="text-lg font-bold grow">NFT Marketplace</span>
+      <NavLink to={routeNames.home} className="grow">
+        <span className="text-lg font-bold">NFT Marketplace</span>
+      </NavLink>
       <div className="flex flex-col md:flex-row gap-2">
         <ConnectButton />
         {account && (

@@ -1,17 +1,16 @@
 import { useCurrentAccount, useSignAndExecuteTransactionBlock, useSuiClient } from "@mysten/dapp-kit";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
-import { MIST_PER_SUI } from "@mysten/sui.js/utils";
-import BigNumber from "bignumber.js";
+import { toast } from "react-toastify";
 
-export const usePlaceListing = (onListed: (id: string) => void) => {
+export const useCancelListing = (onCancelled: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
   const listingsObjectId = useNetworkVariable("listingsObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const placeListing = (objectId: string, price: number) => {
+  const cancelListing = (listingObjectId: string) => {
     if (!account) {
       return;
     }
@@ -21,10 +20,9 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
     txb.moveCall({
       arguments: [
         txb.object(listingsObjectId),
-        txb.pure(objectId),
-        txb.pure.u64(new BigNumber(price).multipliedBy(MIST_PER_SUI.toString()).toFixed())
+        txb.pure(listingObjectId),
       ],
-      target: `${marketplacePackageId}::nft_marketplace::place_listing`,
+      target: `${marketplacePackageId}::nft_marketplace::cancel_listing`,
     });
 
     txb.setGasBudget(100000000);
@@ -44,12 +42,15 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              console.log({ tx });
-              const objectId = tx.effects?.created?.[0]?.reference?.objectId;
-
-              if (objectId) {
-                onListed(objectId);
-              }
+              toast.success("Listing cancelled successfully.", {
+                autoClose: 3000,
+                position: "bottom-right",
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: false,
+              });
+              onCancelled();
             });
         },
         onError: (e) => {
@@ -59,5 +60,5 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
     );
   };
 
-  return placeListing;
+  return cancelListing;
 };

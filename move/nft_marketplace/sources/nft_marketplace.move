@@ -98,7 +98,7 @@ module nft_marketplace::nft_marketplace {
         id: UID,
         price: u64,
         owner: address,
-        // nft: T: key + store - dynamic field to still have NFT accesible by id
+        // nft: T: TestnetNFT - dynamic field to still have NFT accesible by id
     }
 
     public struct Bid has key {
@@ -220,7 +220,7 @@ module nft_marketplace::nft_marketplace {
         id.delete()
     }
 
-    public fun place_listing<N: key + store>(marketplace: &mut Marketplace, nft: N, price: u64, ctx: &mut TxContext) {
+    public fun place_listing(marketplace: &mut Marketplace, nft: TestnetNFT, price: u64, ctx: &mut TxContext) {
         let sender = ctx.sender();
 
         let mut listing = Listing {
@@ -246,16 +246,16 @@ module nft_marketplace::nft_marketplace {
         transfer::share_object(listing);
     }
 
-    public fun cancel_listing<N: key + store>(
+    public fun cancel_listing(
         marketplace: &mut Marketplace,
         mut listing: Listing,
         ctx: &mut TxContext
-    ): N {
+    ): TestnetNFT {
         let sender = ctx.sender();
 
         assert!(listing.owner == sender, EInvalidOwner);
 
-        let nft: N = dof::remove(&mut listing.id, b"nft");
+        let nft: TestnetNFT = dof::remove(&mut listing.id, b"nft");
 
         let Listing { id, owner, price } = listing;
 
@@ -273,13 +273,13 @@ module nft_marketplace::nft_marketplace {
         nft
     }
 
-    public fun buy<N: key + store>(
+    public fun buy(
         marketplace: &mut Marketplace,
         mut listing: Listing,
         coin: Coin<SUI>,
         ctx: &mut TxContext
-    ): N {
-        let nft: N = dof::remove(&mut listing.id, b"nft");
+    ): TestnetNFT {
+        let nft: TestnetNFT = dof::remove(&mut listing.id, b"nft");
 
         let Listing { id, owner, price } = listing;
 
@@ -302,7 +302,7 @@ module nft_marketplace::nft_marketplace {
         nft
     }
 
-    public fun place_bid<N: key + store>(marketplace: &mut Marketplace, nft: &N, coin: Coin<SUI>, ctx: &mut TxContext) {
+    public fun place_bid(marketplace: &mut Marketplace, nft: &TestnetNFT, coin: Coin<SUI>, ctx: &mut TxContext) {
         let sender = ctx.sender();
 
         let bid = Bid {
@@ -348,10 +348,10 @@ module nft_marketplace::nft_marketplace {
         coin::from_balance(balance, ctx)
     }
 
-    public fun accept_bid<N: key + store>(
+    public fun accept_bid(
         marketplace: &mut Marketplace,
         bid: Bid,
-        nft: N,
+        nft: TestnetNFT,
         ctx: &mut TxContext
     ): Coin<SUI> {
         let Bid { id, nft_id, balance, owner } = bid;

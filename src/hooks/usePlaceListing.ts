@@ -6,6 +6,7 @@ import {
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
+import { toast } from "react-toastify";
 
 export const usePlaceListing = (onListed: (id: string) => void) => {
   const account = useCurrentAccount();
@@ -47,8 +48,21 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              console.log({ tx });
-              const objectId = tx.effects?.created?.[0]?.reference?.objectId;
+              toast.success("NFT listed successfully.", {
+                autoClose: 3000,
+                position: "bottom-right",
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: false,
+              });
+
+              const object = tx.effects?.created?.find((createdObject => {
+                console.log({ currentOwner: (createdObject.owner as any).Shared });
+                return (createdObject.owner as any).Shared != null;
+              }));
+              const objectId = object?.reference?.objectId;
+              console.log({ object });
 
               if (objectId) {
                 onListed(objectId);

@@ -22,10 +22,12 @@ export const useBuyNft = (onBuy: () => void) => {
 
     const [coin] = txb.splitCoins(txb.gas, [BigInt(price)]);
 
-    txb.moveCall({
+    const nft = txb.moveCall({
       arguments: [txb.object(listingsObjectId), txb.pure(objectId), coin],
       target: `${marketplacePackageId}::nft_marketplace::buy`,
     });
+
+    txb.transferObjects([nft], txb.pure.address(account.address));
 
     txb.setGasBudget(100000000);
 
@@ -44,7 +46,7 @@ export const useBuyNft = (onBuy: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              toast.success("Nft bought with success.", {
+              toast.success("NFT bought successfully.", {
                 autoClose: 3000,
                 position: "bottom-right",
                 hideProgressBar: true,

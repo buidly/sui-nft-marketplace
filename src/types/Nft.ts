@@ -4,4 +4,5 @@ export interface Nft {
   description: string,
   url: string,
   creator: string,
+  owner: string,
 }

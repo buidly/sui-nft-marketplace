@@ -19,7 +19,9 @@ export const NftListing = () => {
 
   if (error) {
     return (
-      <span className="text-lg font-bold">Could not fetch account NFTs</span>
+      <span className="text-lg font-bold mx-3">
+        Could not fetch account NFTs
+      </span>
     );
   }
 

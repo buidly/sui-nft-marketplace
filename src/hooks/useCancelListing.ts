@@ -3,27 +3,29 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
 import { toast } from "react-toastify";
 
-export const useCancelListing = (onCancelled: () => void) => {
+export const useCancelListing = (onSuccess: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
   const listingsObjectId = useNetworkVariable("listingsObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const cancelListing = (listingObjectId: string) => {
+  const cancelListing = (objectId: string) => {
     if (!account) {
       return;
     }
 
     const txb = new TransactionBlock();
 
-    txb.moveCall({
+    const nft = txb.moveCall({
       arguments: [
         txb.object(listingsObjectId),
-        txb.pure(listingObjectId),
+        txb.pure(objectId),
       ],
       target: `${marketplacePackageId}::nft_marketplace::cancel_listing`,
     });
+
+    txb.transferObjects([nft], txb.pure.address(account.address));
 
     txb.setGasBudget(100000000);
 
@@ -50,7 +52,7 @@ export const useCancelListing = (onCancelled: () => void) => {
                 pauseOnHover: false,
                 draggable: false,
               });
-              onCancelled();
+              onSuccess();
             });
         },
         onError: (e) => {

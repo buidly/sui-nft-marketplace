@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { NftWithPrice } from "../types/NftWithPrice";
 
 export const useGetNftDetails = (objectId: string) => {
-  const { data, isPending, error } = useSuiClientQuery("getObject", {
+  const { data: objectData, isPending: objectPending, error: objectError } = useSuiClientQuery("getObject", {
     id: objectId,
     options: {
       showContent: true,
@@ -11,26 +11,51 @@ export const useGetNftDetails = (objectId: string) => {
     },
   });
 
+  const { data: dynamicFieldsData, isPending: dynamicFieldsPending, error: dynamicFieldsError } = useSuiClientQuery("getDynamicFields", {
+    parentId: objectId,
+  });
+
+  const dynamicFieldObjectId = dynamicFieldsData?.data?.[0]?.objectId;
+
+  const { data: nftData, isPending: nftPending, error: nftError } = useSuiClientQuery("multiGetObjects", {
+    ids: [dynamicFieldObjectId!!],
+    options: {
+      showContent: true,
+      showOwner: true,
+    },
+  }, { enabled: dynamicFieldsData?.data?.[0] != null });
+
+
   const nft = useMemo(() => {
     const nftFields =
-      data?.data?.content?.dataType === "moveObject"
-        ? (data.data.content.fields as any)
+      nftData?.[0]?.data?.content?.dataType === "moveObject"
+        ? (nftData[0].data.content.fields as any)
         : null;
 
-    if (!nftFields) {
+    const objectFields =
+      objectData?.data?.content?.dataType === "moveObject"
+        ? (objectData.data.content.fields as any)
+        : null;
+
+    if (!nftFields || !objectFields) {
       return null;
     }
 
     return {
       id: nftFields.id,
-      name: nftFields.nft.fields.name,
-      description: nftFields.nft.fields.description,
-      url: nftFields.nft.fields.url,
-      creator: nftFields.nft.fields.creator,
-      price: nftFields.price,
+      name: nftFields.name,
+      description: nftFields.description,
+      url: nftFields.url,
+      creator: nftFields.creator,
+      price: objectFields.price,
+      owner: objectFields.owner,
     } as NftWithPrice;
-  }, [data]);
+  }, [objectData, nftData]);
 
 
-  return { nft, isPending, error };
+  return {
+    nft,
+    isPending: objectPending || dynamicFieldsPending || nftPending,
+    error: objectError || dynamicFieldsError || nftError
+  };
 };

@@ -11,5 +11,9 @@ export const useGetListings = () => {
     },
   });
 
-  console.log({ isPending, error, data });
+  const listingsFields = data?.data?.content?.dataType === "moveObject"
+    ? (data.data.content.fields as any)
+    : null;
+
+  return { data: listingsFields?.listings, isPending, error };
 };

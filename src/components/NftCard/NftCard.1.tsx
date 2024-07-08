@@ -2,11 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { routeNames } from "../../routes";
 import { useGetNftDetails } from "../../hooks";
 import BigNumber from "bignumber.js";
-import { MIST_PER_SUI } from "@mysten/sui.js/utils";
-
-interface NftCard {
-  objectId: string;
-}
+import { NftCard, NftCard } from "./NftCard";
 
 export const NftCard = ({ objectId }: NftCard) => {
   const navigate = useNavigate();
@@ -32,10 +28,8 @@ export const NftCard = ({ objectId }: NftCard) => {
         className="object-cover rounded-lg h-[200px] w-[257px]"
         src={nft.url}
       />
-      <span className="font-bold text-sm mt-3">{nft.name}</span>
-      <span className="font-bold text-sm">
-        Price: {priceDenom.toFixed()} SUI
-      </span>
+      <span className="font-bold text-sm mt-3">{nft.url}</span>
+      <span className="font-bold text-sm">Price: SUI</span>
     </div>
   );
 };

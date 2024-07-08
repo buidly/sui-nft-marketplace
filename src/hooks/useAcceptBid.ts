@@ -7,24 +7,26 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { useNetworkVariable } from "../networkConfig";
 import { toast } from "react-toastify";
 
-export const useBuyNft = (onBuy: () => void) => {
+export const useAcceptBid = (onAcceptBid: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
   const listingsObjectId = useNetworkVariable("listingsObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const buy = (objectId: string, price: string) => {
+  const acceptBid = (bidObjectId: string, objectId: string) => {
     if (!account) {
       return;
     }
     const txb = new TransactionBlock();
 
-    const [coin] = txb.splitCoins(txb.gas, [BigInt(price)]);
-
     txb.moveCall({
-      arguments: [txb.object(listingsObjectId), txb.pure(objectId), coin],
-      target: `${marketplacePackageId}::nft_marketplace::buy`,
+      arguments: [
+        txb.object(listingsObjectId),
+        txb.pure(bidObjectId),
+        txb.pure(objectId),
+      ],
+      target: `${marketplacePackageId}::nft_marketplace::accept_bid`,
     });
 
     txb.setGasBudget(100000000);
@@ -44,7 +46,8 @@ export const useBuyNft = (onBuy: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              toast.success("Nft bought with success.", {
+              console.log(tx);
+              toast.success("Bid accepted with success.", {
                 autoClose: 3000,
                 position: "bottom-right",
                 hideProgressBar: true,
@@ -52,12 +55,12 @@ export const useBuyNft = (onBuy: () => void) => {
                 pauseOnHover: false,
                 draggable: false,
               });
-              onBuy();
+              onAcceptBid();
             });
         },
       },
     );
   };
 
-  return buy;
+  return acceptBid;
 };

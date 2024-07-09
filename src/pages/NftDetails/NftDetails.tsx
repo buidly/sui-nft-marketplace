@@ -11,6 +11,7 @@ import { usePlaceBid } from "../../hooks/usePlaceBid";
 import { routeNames } from "../../routes";
 import { priceDenom } from "../../helpers";
 import { useCancelBid } from "../../hooks/useCancelBid";
+import { useAcceptBid } from "../../hooks/useAcceptBid";
 
 export const NftDetails = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -32,6 +33,9 @@ export const NftDetails = () => {
     navigate(routeNames.home);
   });
   const cancelBid = useCancelBid(() => {
+    refetch();
+  });
+  const acceptBid = useAcceptBid(() => {
     refetch();
   });
   const cancelListing = useCancelListing(() => {
@@ -85,7 +89,7 @@ export const NftDetails = () => {
           <div className="flex space-x-4 mb-4">
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-              onClick={() => objectId && buy(objectId, nft.price)}
+              onClick={() => objectId && buy(objectId, nft.price, nft.type)}
             >
               Buy
             </button>
@@ -98,7 +102,7 @@ export const NftDetails = () => {
             {nft.owner === account?.address && (
               <button
                 className={`px-4 py-2 bg-red-500 text-white rounded-lg`}
-                onClick={() => objectId && cancelListing(objectId)}
+                onClick={() => objectId && cancelListing(objectId, nft.type)}
               >
                 Cancel listing
               </button>
@@ -137,7 +141,10 @@ export const NftDetails = () => {
                     {priceDenom(bid.balance).toFixed()} SUI
                   </span>
                   {nft.owner === account?.address && (
-                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                      onClick={() => acceptBid(bid.bidId, nft.id, nft.type)}
+                    >
                       Accept bid
                     </button>
                   )}

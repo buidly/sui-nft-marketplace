@@ -21,7 +21,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
     }
 
     const txb = new TransactionBlock();
-    console.log({ type });
+
     txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),

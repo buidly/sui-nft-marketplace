@@ -4,8 +4,8 @@ import {
   useSuiClient,
 } from "@mysten/dapp-kit";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { useNetworkVariable } from "../networkConfig";
 import { toast } from "react-toastify";
+import { useNetworkVariable } from "../networkConfig";
 
 export const useAcceptBid = (onAcceptBid: () => void) => {
   const account = useCurrentAccount();
@@ -14,19 +14,30 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const acceptBid = (bidObjectId: string, objectId: string) => {
+  const acceptBid = (bidObjectId: string, objectId: string, type: string) => {
     if (!account) {
       return;
     }
+
     const txb = new TransactionBlock();
+
+    const [nft] = txb.moveCall({
+      arguments: [
+        txb.object(marketplaceObjectId),
+        txb.pure(objectId),
+      ],
+      target: `${marketplacePackageId}::nft_marketplace::cancel_listing`,
+      typeArguments: [type]
+    });
 
     const coin = txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
         txb.pure(bidObjectId),
-        txb.pure(objectId),
+        nft,
       ],
       target: `${marketplacePackageId}::nft_marketplace::accept_bid`,
+      typeArguments: [type],
     });
 
     txb.transferObjects([coin], txb.pure.address(account.address));
@@ -48,8 +59,7 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              console.log(tx);
-              toast.success("Bid accepted with success.", {
+              toast.success("Bid accepted successfully.", {
                 autoClose: 3000,
                 position: "bottom-right",
                 hideProgressBar: true,
@@ -60,6 +70,9 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
               onAcceptBid();
             });
         },
+        onError: (err) => {
+          console.log({ err });
+        }
       },
     );
   };

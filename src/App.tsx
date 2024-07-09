@@ -4,6 +4,7 @@ import { Box, Container, Flex, Heading } from "@radix-ui/themes";
 import { useState } from "react";
 import { Counter } from "./Counter";
 import { CreateCounter } from "./CreateCounter";
+import "./index.css";
 
 function App() {
   const currentAccount = useCurrentAccount();
@@ -24,7 +25,7 @@ function App() {
         }}
       >
         <Box>
-          <Heading>dApp Starter Template</Heading>
+          <Heading>NFT Marketplace</Heading>
         </Box>
 
         <Box>

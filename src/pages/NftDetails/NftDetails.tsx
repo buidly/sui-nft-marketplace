@@ -36,7 +36,7 @@ export const NftDetails = () => {
     refetch();
   });
   const acceptBid = useAcceptBid(() => {
-    refetch();
+    navigate(routeNames.home);
   });
   const cancelListing = useCancelListing(() => {
     navigate(routeNames.home);
@@ -143,7 +143,9 @@ export const NftDetails = () => {
                   {nft.owner === account?.address && (
                     <button
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                      onClick={() => acceptBid(bid.bidId, nft.id, nft.type)}
+                      onClick={() =>
+                        objectId && acceptBid(bid.bidId, objectId, nft.type)
+                      }
                     >
                       Accept bid
                     </button>

@@ -21,22 +21,13 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
 
     const txb = new TransactionBlock();
 
-    const [nft] = txb.moveCall({
-      arguments: [
-        txb.object(marketplaceObjectId),
-        txb.pure(objectId),
-      ],
-      target: `${marketplacePackageId}::nft_marketplace::cancel_listing`,
-      typeArguments: [type]
-    });
-
     const coin = txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
         txb.pure(bidObjectId),
-        nft,
+        txb.object(objectId),
       ],
-      target: `${marketplacePackageId}::nft_marketplace::accept_bid`,
+      target: `${marketplacePackageId}::nft_marketplace::accept_bid_with_listing`,
       typeArguments: [type],
     });
 

@@ -30,13 +30,14 @@ export const useGetAccountNfts = () => {
           nft?.content?.dataType === "moveObject"
             ? (nft.content.fields as any)
             : null;
-
+        console.log({ nft });
         return {
           id: nft?.objectId,
           name: nftFields?.name ?? '',
           description: nftFields?.description ?? '',
           url: nftFields?.url ?? '',
           creator: nftFields?.creator ?? '',
+          type: (nft?.content as any)?.type ?? '',
         } as Nft;
       }) ?? [],
     isPending,

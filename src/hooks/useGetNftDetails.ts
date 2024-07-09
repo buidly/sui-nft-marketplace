@@ -49,6 +49,7 @@ export const useGetNftDetails = (objectId: string) => {
       creator: nftFields.creator,
       price: objectFields.price,
       owner: objectFields.owner,
+      type: (nftData?.[0].data?.content as any)?.type ?? ''
     } as NftWithPrice;
   }, [objectData, nftData]);
 

@@ -23,7 +23,7 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
     const txb = new TransactionBlock();
 
     const [coin] = txb.splitCoins(txb.gas, [new BigNumber(price).multipliedBy(MIST_PER_SUI.toString()).toFixed()]);
-    console.log({ objectId });
+
     txb.moveCall({
       arguments: [txb.object(marketplaceObjectId), txb.pure.id(objectId), coin],
       target: `${marketplacePackageId}::nft_marketplace::place_bid`,

@@ -1,36 +1,46 @@
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetNftDetails } from "../../hooks";
-import { useCurrentAccount } from "@mysten/dapp-kit";
-import { useBuyNft } from "../../hooks/useBuyNft";
-import { routeNames } from "../../routes";
-import { MIST_PER_SUI } from "@mysten/sui.js/utils";
-import { useCancelListing } from "../../hooks/useCancelListing";
-import BigNumber from "bignumber.js";
 import { Loader } from "../../components";
+import { useGetNftDetails } from "../../hooks";
+import { useBuyNft } from "../../hooks/useBuyNft";
+import { useCancelListing } from "../../hooks/useCancelListing";
+import { useGetBidsDetails } from "../../hooks/useGetBidsDetails";
+import { useGetListings } from "../../hooks/useGetListings";
 import { usePlaceBid } from "../../hooks/usePlaceBid";
-
-interface Bid {
-  name: string;
-  bidValue: number;
-}
+import { routeNames } from "../../routes";
+import { priceDenom } from "../../helpers";
+import { useCancelBid } from "../../hooks/useCancelBid";
 
 export const NftDetails = () => {
   const { objectId } = useParams<{ objectId: string }>();
   const account = useCurrentAccount();
   const navigate = useNavigate();
   const { nft, isPending, error } = useGetNftDetails(objectId!);
+  const {
+    bidsData,
+    isPending: isPendingListings,
+    error: isErrorListings,
+    refetch,
+  } = useGetListings();
+  const {
+    data: bidsNeeded,
+    isPending: isPendingBidDetails,
+    error: errorGetBidDetails,
+  } = useGetBidsDetails(bidsData ? (bidsData as string[]) : [], nft?.id);
   const buy = useBuyNft(() => {
     navigate(routeNames.home);
+  });
+  const cancelBid = useCancelBid(() => {
+    refetch();
   });
   const cancelListing = useCancelListing(() => {
     navigate(routeNames.home);
   });
   const placeBid = usePlaceBid(() => {
-    // TODO Refresh bids
+    refetch();
   });
 
-  const [bids, setBids] = useState<Bid[]>([]);
   const [showBidField, setShowBidField] = useState(false);
   const [newBid, setNewBid] = useState("");
 
@@ -44,21 +54,17 @@ export const NftDetails = () => {
     setNewBid("");
   };
 
-  if (isPending) {
+  if (isPending || isPendingListings || isPendingBidDetails) {
     return <Loader />;
   }
 
-  if (error || !nft) {
+  if (error || !nft || isErrorListings || errorGetBidDetails) {
     return (
       <span className="text-lg font-bold mx-3">
         Could not fetch NFT details
       </span>
     );
   }
-
-  const priceDenom = new BigNumber(nft.price ?? 0).dividedBy(
-    MIST_PER_SUI.toString(),
-  );
 
   return (
     <div className="flex flex-col-reverse md:flex-row">
@@ -73,8 +79,8 @@ export const NftDetails = () => {
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
           <h1 className="text-2xl font-bold mb-4">Trade</h1>
           <p className="text-sm mb-4">
-            Current Price: {priceDenom.toFixed()} SUI ($
-            {priceDenom.multipliedBy(1.2).toFixed()})
+            Current Price: {priceDenom(nft.price).toFixed()} SUI ($
+            {priceDenom(nft.price).multipliedBy(1.2).toFixed()})
           </p>
           <div className="flex space-x-4 mb-4">
             <button
@@ -120,20 +126,34 @@ export const NftDetails = () => {
         <div className="bg-gray-700 rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4">Existing Bids</h2>
           <div className="space-y-4">
-            {bids.map((bid, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center p-4 border rounded-lg"
-              >
-                <span>{bid.name}</span>
-                <span className="font-bold">${bid.bidValue}</span>
-                {nft.owner === account?.address && (
-                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
-                    Accept bid
-                  </button>
-                )}
-              </div>
-            ))}
+            {bidsNeeded?.length > 0 ? (
+              bidsNeeded.map((bid, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-left p-4 border rounded-lg flex-col gap-2"
+                >
+                  <span>{bid.owner}</span>
+                  <span className="font-bold">
+                    {priceDenom(bid.balance).toFixed()} SUI
+                  </span>
+                  {nft.owner === account?.address && (
+                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                      Accept bid
+                    </button>
+                  )}
+                  {bid.owner === account?.address && (
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                      onClick={() => cancelBid(bid.bidId)}
+                    >
+                      Cancel bid
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p>No active bids.</p>
+            )}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ export const useBuyNft = (onBuy: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const listingsObjectId = useNetworkVariable("listingsObjectId");
+  const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
   const buy = (objectId: string, price: string) => {
@@ -23,7 +23,7 @@ export const useBuyNft = (onBuy: () => void) => {
     const [coin] = txb.splitCoins(txb.gas, [BigInt(price)]);
 
     const nft = txb.moveCall({
-      arguments: [txb.object(listingsObjectId), txb.pure(objectId), coin],
+      arguments: [txb.object(marketplaceObjectId), txb.pure(objectId), coin],
       target: `${marketplacePackageId}::nft_marketplace::buy`,
     });
 

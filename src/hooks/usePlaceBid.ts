@@ -13,7 +13,7 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const listingsObjectId = useNetworkVariable("listingsObjectId");
+  const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
   const placeBid = (objectId: string, price: string) => {
@@ -25,7 +25,7 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
     const [coin] = txb.splitCoins(txb.gas, [new BigNumber(price).multipliedBy(MIST_PER_SUI.toString()).toFixed()]);
     console.log({ objectId });
     txb.moveCall({
-      arguments: [txb.object(listingsObjectId), txb.pure.id(objectId), coin],
+      arguments: [txb.object(marketplaceObjectId), txb.pure.id(objectId), coin],
       target: `${marketplacePackageId}::nft_marketplace::place_bid`,
     });
 

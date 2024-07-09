@@ -16,7 +16,7 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
       variables: {
         counterPackageId: DEVNET_COUNTER_PACKAGE_ID,
         marketplacePackageId: DEVNET_MARKETPLACE_PACKAGE_ID,
-        listingsObjectId: DEVNET_LISTINGS_OBJECT_ID,
+        marketplaceObjectId: DEVNET_LISTINGS_OBJECT_ID,
       },
     },
     mainnet: {
@@ -24,7 +24,7 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
       variables: {
         counterPackageId: MAINNET_COUNTER_PACKAGE_ID,
         marketplacePackageId: MAINNET_MARKETPLACE_PACKAGE_ID,
-        listingsObjectId: MAINNET_LISTINGS_OBJECT_ID,
+        marketplaceObjectId: MAINNET_LISTINGS_OBJECT_ID,
       },
     },
   });

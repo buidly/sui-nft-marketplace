@@ -12,7 +12,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const listingsObjectId = useNetworkVariable("listingsObjectId");
+  const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
   const placeListing = (objectId: string, price: number) => {
@@ -24,7 +24,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
 
     txb.moveCall({
       arguments: [
-        txb.object(listingsObjectId),
+        txb.object(marketplaceObjectId),
         txb.pure(objectId),
         txb.pure.u64(price * Number(MIST_PER_SUI)),
       ],

@@ -11,7 +11,7 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
   const account = useCurrentAccount();
   const client = useSuiClient();
   const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const listingsObjectId = useNetworkVariable("listingsObjectId");
+  const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
   const acceptBid = (bidObjectId: string, objectId: string) => {
@@ -22,7 +22,7 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
 
     txb.moveCall({
       arguments: [
-        txb.object(listingsObjectId),
+        txb.object(marketplaceObjectId),
         txb.pure(bidObjectId),
         txb.pure(objectId),
       ],

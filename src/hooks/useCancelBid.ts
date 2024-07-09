@@ -18,12 +18,15 @@ export const useCancelBid = (onCancelBid: () => void) => {
     if (!account) {
       return;
     }
+    console.log(bidObjectId);
     const txb = new TransactionBlock();
 
-    txb.moveCall({
+    const coin = txb.moveCall({
       arguments: [txb.object(marketplaceObjectId), txb.pure(bidObjectId)],
       target: `${marketplacePackageId}::nft_marketplace::cancel_bid`,
     });
+
+    txb.transferObjects([coin], txb.pure.address(account.address));
 
     txb.setGasBudget(100000000);
 

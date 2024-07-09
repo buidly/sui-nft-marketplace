@@ -20,7 +20,7 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
     }
     const txb = new TransactionBlock();
 
-    txb.moveCall({
+    const coin = txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
         txb.pure(bidObjectId),
@@ -28,6 +28,8 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
       ],
       target: `${marketplacePackageId}::nft_marketplace::accept_bid`,
     });
+
+    txb.transferObjects([coin], txb.pure.address(account.address));
 
     txb.setGasBudget(100000000);
 

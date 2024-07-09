@@ -1,1 +1,2 @@
-export * from './Nft';
+export * from "./Nft";
+export * from "./Bid";

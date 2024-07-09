@@ -5,4 +5,5 @@ export interface Nft {
   url: string,
   creator: string,
   owner: string,
+  type: string,
 }

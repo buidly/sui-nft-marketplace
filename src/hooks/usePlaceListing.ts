@@ -4,9 +4,9 @@ import {
   useSuiClient,
 } from "@mysten/dapp-kit";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { useNetworkVariable } from "../networkConfig";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 import { toast } from "react-toastify";
+import { useNetworkVariable } from "../networkConfig";
 
 export const usePlaceListing = (onListed: (id: string) => void) => {
   const account = useCurrentAccount();
@@ -15,13 +15,13 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const placeListing = (objectId: string, price: number) => {
+  const placeListing = (objectId: string, price: number, type: string) => {
     if (!account) {
       return;
     }
 
     const txb = new TransactionBlock();
-
+    console.log({ type });
     txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
@@ -29,6 +29,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
         txb.pure.u64(price * Number(MIST_PER_SUI)),
       ],
       target: `${marketplacePackageId}::nft_marketplace::place_listing`,
+      typeArguments: [type]
     });
 
     txb.setGasBudget(100000000);
@@ -58,11 +59,9 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
               });
 
               const object = tx.effects?.created?.find((createdObject => {
-                console.log({ currentOwner: (createdObject.owner as any).Shared });
                 return (createdObject.owner as any).Shared != null;
               }));
               const objectId = object?.reference?.objectId;
-              console.log({ object });
 
               if (objectId) {
                 onListed(objectId);

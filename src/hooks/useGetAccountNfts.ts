@@ -37,6 +37,7 @@ export const useGetAccountNfts = () => {
           description: nftFields?.description ?? '',
           url: nftFields?.url ?? '',
           creator: nftFields?.creator ?? '',
+          type: (nft?.content as any)?.type ?? '',
         } as Nft;
       }) ?? [],
     isPending,

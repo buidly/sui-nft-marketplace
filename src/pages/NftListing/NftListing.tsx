@@ -34,7 +34,7 @@ export const NftListing = () => {
             key={nft.id}
             nft={nft}
             onListNft={function (nft: Nft, price: number): void {
-              placeListing(nft.id, price);
+              placeListing(nft.id, price, nft.type);
             }}
           />
         ))}

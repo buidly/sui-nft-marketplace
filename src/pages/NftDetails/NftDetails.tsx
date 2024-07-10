@@ -9,7 +9,7 @@ import { useGetBidsDetails } from "../../hooks/useGetBidsDetails";
 import { useGetListings } from "../../hooks/useGetListings";
 import { usePlaceBid } from "../../hooks/usePlaceBid";
 import { routeNames } from "../../routes";
-import { priceDenom } from "../../helpers";
+import { priceDenom, truncateText } from "../../helpers";
 import { useCancelBid } from "../../hooks/useCancelBid";
 import { useAcceptBid } from "../../hooks/useAcceptBid";
 import cartIcon from "../../assets/buy-cart-icon.svg";
@@ -96,22 +96,22 @@ export const NftDetails = () => {
 
           <div className="flex flex-col md:flex-row gap-x-2 gap-y-2 mb-4">
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg grow md:w-2/6 flex flex-row items-center md:pl-4 md:justify-center gap-x-2"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg grow md:w-2/6 flex flex-row items-center justify-center gap-x-2"
               onClick={() => objectId && buy(objectId, nft.price, nft.type)}
             >
               <img src={cartIcon} className="h-5" />
               Buy Now
             </button>
             <button
-              className={`grow md:w-2/6 px-4 py-2 bg-zinc-800 text-white rounded-lg flex flex-row items-center md:pl-4 md:justify-center gap-x-2`}
+              className={`grow md:w-2/6 px-4 py-2 bg-zinc-800 text-white rounded-lg flex flex-row items-center justify-center gap-x-2`}
               onClick={() => setShowBidField(!showBidField)}
             >
               <img src={tagIcon} className="h-5" />
-              Bid
+              Make offer
             </button>
             {nft.owner === account?.address && (
               <button
-                className={`grow md:w-2/6 px-4 py-2 bg-zinc-800 border border-red-500 text-white rounded-lg flex flex-row items-center md:pl-4 md:justify-center gap-x-2`}
+                className={`grow md:w-2/6 px-4 py-2 bg-zinc-800 border border-red-500 text-white rounded-lg flex flex-row items-center justify-center gap-x-2`}
                 onClick={() => objectId && cancelListing(objectId, nft.type)}
               >
                 <img src={trashIcon} className="h-5" />
@@ -130,10 +130,10 @@ export const NftDetails = () => {
                 onChange={(e) => setNewBid(e.target.value)}
               />
               <button
-                className="px-4 py-2 bg-green-500 text-white rounded-lg mt-2"
+                className="px-4 py-2 bg-zinc-800 border border-green-500 text-white rounded-lg mt-2 w-full"
                 onClick={handleBid}
               >
-                Submit Bid
+                Submit Offer
               </button>
             </div>
           )}
@@ -147,26 +147,29 @@ export const NftDetails = () => {
                   key={index}
                   className="flex justify-between items-left p-4 border rounded-lg flex-col gap-2"
                 >
-                  <span>{bid.owner}</span>
-                  <span className="font-bold">
-                    {priceDenom(bid.balance).toFixed()} SUI
-                  </span>
+                  <div className="flex flex-row justify-between items-center">
+                    <span>{truncateText(bid.owner, 3, 5)}</span>
+                    <span className="font-bold">
+                      {priceDenom(bid.balance).toFixed()} SUI
+                    </span>
+                  </div>
                   {nft.owner === account?.address && (
                     <button
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                      className="px-4 py-2 bg-zinc-800 border border-blue-500  text-white rounded-lg"
                       onClick={() =>
                         objectId && acceptBid(bid.bidId, objectId, nft.type)
                       }
                     >
-                      Accept bid
+                      Accept offer
                     </button>
                   )}
                   {bid.owner === account?.address && (
                     <button
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                      className="px-4 py-2 bg-zinc-800 border border-red-500 text-white rounded-lg flex flex-row items-center justify-center gap-x-2"
                       onClick={() => cancelBid(bid.bidId)}
                     >
-                      Cancel bid
+                      <img src={trashIcon} className="h-5" />
+                      Cancel Offer
                     </button>
                   )}
                 </div>

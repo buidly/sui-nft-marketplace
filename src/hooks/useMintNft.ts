@@ -20,7 +20,7 @@ export const useMintNft = (onSuccess: () => void) => {
 
     const txb = new TransactionBlock();
 
-    txb.moveCall({
+    const nft = txb.moveCall({
       arguments: [
         txb.pure(name),
         txb.pure(description),
@@ -28,6 +28,8 @@ export const useMintNft = (onSuccess: () => void) => {
       ],
       target: `${marketplacePackageId}::nft_marketplace::mint_to_sender`,
     });
+
+    txb.transferObjects([nft], txb.pure.address(account.address));
 
     txb.setGasBudget(100000000);
 
@@ -46,7 +48,7 @@ export const useMintNft = (onSuccess: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              toast.success("Bid accepted successfully.", {
+              toast.success("NFT minted successfully.", {
                 autoClose: 3000,
                 position: "bottom-right",
                 hideProgressBar: true,

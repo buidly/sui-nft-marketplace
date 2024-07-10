@@ -6,6 +6,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
 import burgerMenuIcon from "./assets/burger-menu.svg";
 import closeIcon from "./assets/close-button.svg";
+import buidlyIcon from "./assets/buidly.png";
 import MintModal from "./components/Mint/MintModal";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -45,15 +46,10 @@ export const NavBar = () => {
       <div className="flex flex-row px-3 py-4 w-full items-center">
         <NavLink to={routeNames.home} className="grow">
           <div className="flex flex-row items-center gap-x-1">
-            <img
-              src={
-                "https://cdn.prod.website-files.com/664c70a0853437472986d0d1/664c70a0853437472986d1cf_logo-light.svg"
-              }
-              className="h-6"
-            />
-            <span className="text-lg font-bold text-gray-500">
-              {" "}
-              | NFT Marketplace
+            <img src={buidlyIcon} className="h-8" />
+            <span className="text-2xl font-thin text-gray-300">|</span>
+            <span className="text-lg font-bold text-gray-300">
+              NFT Marketplace
             </span>
           </div>
         </NavLink>

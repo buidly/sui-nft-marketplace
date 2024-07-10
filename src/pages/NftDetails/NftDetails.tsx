@@ -139,7 +139,7 @@ export const NftDetails = () => {
           )}
         </div>
         <div className="bg-zinc-900 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Existing Bids</h2>
+          <h2 className="text-xl font-bold mb-4">Existing Offers</h2>
           <div className="space-y-4">
             {bidsNeeded?.length > 0 ? (
               bidsNeeded.map((bid, index) => (
@@ -175,7 +175,7 @@ export const NftDetails = () => {
                 </div>
               ))
             ) : (
-              <p>No active bids.</p>
+              <p>No active offers.</p>
             )}
           </div>
         </div>

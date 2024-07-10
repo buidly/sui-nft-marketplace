@@ -9,3 +9,7 @@
     gap: 1rem;
   }
 }
+
+.Button_buttonVariants__x1s81q0 {
+  @apply ml-0 md:ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm
+}

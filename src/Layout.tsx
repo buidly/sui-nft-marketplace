@@ -12,12 +12,12 @@ import MintModal from "./components/Mint/MintModal";
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
-      <div className="bg-light d-flex flex-column flex-fill wrapper">
+      <div className="bg-light d-flex flex-column flex-fill wrapper grow min-h-[90dvh]">
         <NavBar />
         <div className="w-full h-[1px] bg-slate-100 mb-3" />
         <main className="d-flex flex-column flex-grow-1">{children}</main>
+        <ToastContainer />
       </div>
-      <ToastContainer />
       <Footer />
     </>
   );

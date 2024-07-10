@@ -4,6 +4,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { routeNames } from "./routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
+import burgerMenuIcon from "./assets/burger-menu.svg";
+import closeIcon from "./assets/close-button.svg";
 import MintModal from "./components/Mint/MintModal";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -24,6 +26,7 @@ export const NavBar = () => {
   const navigate = useNavigate();
 
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
 
   const onListClick = () => {
     if (location.pathname.includes(routeNames.placeListing)) {
@@ -32,29 +35,45 @@ export const NavBar = () => {
     navigate(routeNames.placeListing);
   };
 
+  const toggleMenu = () => {
+    setMenuOpen(!isMenuOpen);
+  };
+
   return (
     <div className="flex flex-col md:flex-row px-3 py-4 w-full items-center">
-      <NavLink to={routeNames.home} className="grow">
-        <span className="text-lg font-bold">NFT Marketplace</span>
-      </NavLink>
-      <div className="flex flex-col md:flex-row gap-2">
+      <div className="flex flex-row px-3 py-4 w-full items-center">
+        <NavLink to={routeNames.home} className="grow">
+          <span className="text-lg font-bold">NFT Marketplace</span>
+        </NavLink>
+        <div className="flex md:hidden">
+          <button onClick={toggleMenu} className="text-[#182435]">
+            {isMenuOpen ? (
+              <img src={closeIcon} height={42} width={42} />
+            ) : (
+              <img src={burgerMenuIcon} height={42} width={42} />
+            )}
+          </button>
+        </div>
+      </div>
+      <div
+        className={`flex-col md:flex-row gap-2 md:flex ${isMenuOpen ? "flex" : "hidden"} mt-4 md:mt-0 w-full md:w-auto`}
+      >
         <ConnectButton />
         {account && (
           <button
             onClick={onListClick}
-            className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
+            className="ml-0 md:ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
           >
             List NFTs
           </button>
         )}
         <button
           onClick={() => setModalOpen(true)}
-          className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
+          className="ml-0 md:ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
         >
           Mint NFTs
         </button>
       </div>
-
       <MintModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );

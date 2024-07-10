@@ -1,9 +1,10 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { routeNames } from "./routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
+import MintModal from "./components/Mint/MintModal";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -22,7 +23,9 @@ export const NavBar = () => {
   const account = useCurrentAccount();
   const navigate = useNavigate();
 
-  const onClick = () => {
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const onListClick = () => {
     if (location.pathname.includes(routeNames.placeListing)) {
       return;
     }
@@ -38,13 +41,21 @@ export const NavBar = () => {
         <ConnectButton />
         {account && (
           <button
-            onClick={onClick}
+            onClick={onListClick}
             className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
           >
             List NFTs
           </button>
         )}
+        <button
+          onClick={() => setModalOpen(true)}
+          className="ml-2 flex justify-center items-center h-[50px] px-6 rounded-xl bg-[#F6F7F9] text-[#182435] font-semibold text-sm"
+        >
+          Mint NFTs
+        </button>
       </div>
+
+      <MintModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 };

@@ -44,7 +44,18 @@ export const NavBar = () => {
     <div className="flex flex-col md:flex-row px-3 py-4 w-full items-center">
       <div className="flex flex-row px-3 py-4 w-full items-center">
         <NavLink to={routeNames.home} className="grow">
-          <span className="text-lg font-bold">NFT Marketplace</span>
+          <div className="flex flex-row items-center gap-x-1">
+            <img
+              src={
+                "https://cdn.prod.website-files.com/664c70a0853437472986d0d1/664c70a0853437472986d1cf_logo-light.svg"
+              }
+              className="h-6"
+            />
+            <span className="text-lg font-bold text-gray-500">
+              {" "}
+              | NFT Marketplace
+            </span>
+          </div>
         </NavLink>
         <div className="flex md:hidden">
           <button onClick={toggleMenu} className="text-[#182435]">

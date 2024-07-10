@@ -17,6 +17,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <main className="d-flex flex-column flex-grow-1">{children}</main>
       </div>
       <ToastContainer />
+      <Footer />
     </>
   );
 };
@@ -76,5 +77,29 @@ export const NavBar = () => {
       </div>
       <MintModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
     </div>
+  );
+};
+
+import HeartIcon from "./assets/heart-icon.svg";
+export const Footer = () => {
+  return (
+    <footer className="mx-auto w-full max-w-prose pb-6 pl-6 pr-6 mt-6 text-center text-gray-400">
+      <div className="flex flex-col items-center text sm text-gray-400">
+        <a
+          className="text-gray-400 text-sm hover:cursor-pointer hover:underline"
+          href="/disclaimer"
+        >
+          Disclaimer
+        </a>
+        <a
+          target="_blank"
+          className="flex items-center text-sm hover:underline"
+          href="https://www.buidly.com/"
+        >
+          Made with <img src={HeartIcon} className="mx-1 fill-blue-500" /> by
+          the Buidly team
+        </a>
+      </div>
+    </footer>
   );
 };

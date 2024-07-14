@@ -5,7 +5,6 @@ module nft_marketplace::nft_marketplace {
     // use sui::transfer;
     // use sui::tx_context::{Self, TxContext};
 
-    use std::debug;
     use std::string::{Self, utf8};
 
     use sui::bag;
@@ -202,8 +201,6 @@ module nft_marketplace::nft_marketplace {
             url: url::new_unsafe_from_bytes(url),
             creator: sender,
         };
-
-        debug::print(&nft);
 
         event::emit(NFTMinted {
             object_id: object::id(&nft),

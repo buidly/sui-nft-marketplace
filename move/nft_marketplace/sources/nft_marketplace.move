@@ -7,7 +7,6 @@ module nft_marketplace::nft_marketplace {
 
     use std::string::{Self, utf8};
 
-    use sui::bag;
     use sui::balance::Balance;
     use sui::coin::{Self, Coin};
     use sui::display;
@@ -28,6 +27,7 @@ module nft_marketplace::nft_marketplace {
     const EInvalidNft: u64 = 1;
     const EInvalidOwner: u64 = 2;
     const EListingNotFoundForNFTId: u64 = 3;
+    const EBidNotFoundForNFTId: u64 = 4;
 
     // ====== Events ======
 
@@ -100,10 +100,9 @@ module nft_marketplace::nft_marketplace {
         price: u64,
         owner: address,
         nft_id: ID
-        // nft: T: key + store - dynamic field to still have NFT accesible by id
     }
 
-    public struct Bid has key {
+    public struct Bid has key, store {
         id: UID,
         nft_id: ID,
         balance: Balance<SUI>,
@@ -113,10 +112,7 @@ module nft_marketplace::nft_marketplace {
     public struct Marketplace has key {
         id: UID,
         listings: Table<ID, Listing>,
-        // K: ID, V: index in listings
-        bids: vector<ID>,
-        bids_index: bag::Bag,
-        // K: ID, V: index in bids
+        bids: Table<ID, vector<Bid>>,
     }
 
     // For displaying NFT image
@@ -152,8 +148,7 @@ module nft_marketplace::nft_marketplace {
         let marketplace = Marketplace {
             id: object::new(ctx),
             listings: table::new<ID, Listing>(ctx),
-            bids: vector[],
-            bids_index: bag::new(ctx),
+            bids: table::new<ID, vector<Bid>>(ctx),
         };
 
         event::emit(MarketplaceInit {
@@ -237,8 +232,6 @@ module nft_marketplace::nft_marketplace {
 
         dof::add(&mut marketplace.id, nft_id, nft);
 
-        let index = marketplace.listings.length();
-
         marketplace.listings.add<ID, Listing>(nft_id, listing);
     }
 
@@ -298,6 +291,8 @@ module nft_marketplace::nft_marketplace {
     }
 
     public fun place_bid(marketplace: &mut Marketplace, nft_id: ID, coin: Coin<SUI>, ctx: &mut TxContext) {
+        assert!(dof::exists_(&marketplace.id, nft_id), EInvalidNft);
+
         let sender = ctx.sender();
 
         let bid = Bid {
@@ -314,17 +309,18 @@ module nft_marketplace::nft_marketplace {
             creator: sender,
         });
 
-        let index = marketplace.bids.length();
-
-        marketplace.bids.push_back(object::id(&bid));
-        marketplace.bids_index.add(object::id(&bid), index);
-
-        transfer::share_object(bid);
+        if (marketplace.bids.contains(nft_id)) {
+            let elements = marketplace.bids.borrow_mut(nft_id);
+            elements.push_back(bid);
+        } else {
+            marketplace.bids.add<ID, vector<Bid>>(nft_id, vector::singleton(bid));
+        }
     }
 
-    public fun cancel_bid(marketplace: &mut Marketplace, bid: Bid, ctx: &mut TxContext): Coin<SUI> {
-        let sender = ctx.sender();
+    public fun cancel_bid(marketplace: &mut Marketplace, nft_id: ID, bid_id: ID, ctx: &mut TxContext): Coin<SUI> {
+        let bid = get_and_remove_bid(marketplace, nft_id, bid_id);
 
+        let sender = ctx.sender();
         assert!(bid.owner == sender, EInvalidOwner);
 
         let Bid { id, nft_id, balance, owner } = bid;
@@ -336,8 +332,6 @@ module nft_marketplace::nft_marketplace {
             price: balance.value(),
         });
 
-        remove_bid(marketplace, &id);
-
         id.delete();
 
         coin::from_balance(balance, ctx)
@@ -345,34 +339,7 @@ module nft_marketplace::nft_marketplace {
 
     public fun accept_bid<N: key + store>(
         marketplace: &mut Marketplace,
-        bid: Bid,
-        nft: N,
-        ctx: &mut TxContext
-    ): Coin<SUI> {
-        let Bid { id, nft_id, balance, owner } = bid;
-
-        assert!(nft_id == object::id(&nft), EInvalidNft);
-
-        event::emit(AcceptBid {
-            object_id: id.uid_to_inner(),
-            nft_id: object::id(&nft),
-            creator: owner,
-            seller: ctx.sender(),
-            price: balance.value(),
-        });
-
-        remove_bid(marketplace, &id);
-
-        transfer::public_transfer(nft, owner);
-
-        id.delete();
-
-        coin::from_balance(balance, ctx)
-    }
-
-    public fun accept_bid_with_listing<N: key + store>(
-        marketplace: &mut Marketplace,
-        bid: Bid,
+        bid_id: ID,
         nft_id: ID,
         ctx: &mut TxContext
     ): Coin<SUI> {
@@ -386,6 +353,8 @@ module nft_marketplace::nft_marketplace {
 
         let Listing { id: listing_id, owner: _, price: _, nft_id: _ } = listing;
 
+        let bid = get_and_remove_bid(marketplace, nft_id, bid_id);
+
         let Bid { id, nft_id: _, balance, owner } = bid;
 
         event::emit(AcceptBid {
@@ -396,7 +365,6 @@ module nft_marketplace::nft_marketplace {
             price: balance.value(),
         });
 
-        remove_bid(marketplace, &id);
         transfer::public_transfer(nft, owner);
 
         id.delete();
@@ -407,25 +375,32 @@ module nft_marketplace::nft_marketplace {
 
     // === Private Functions ===
 
+    fun get_and_remove_bid(marketplace: &mut Marketplace, nft_id: ID, bid_id: ID): Bid {
+        assert!(marketplace.bids.contains<ID, vector<Bid>>(nft_id), EBidNotFoundForNFTId);
+        let bids = marketplace.bids.borrow_mut<ID, vector<Bid>>(nft_id);
 
-    fun remove_bid(marketplace: &mut Marketplace, id: &UID) {
-        let index = marketplace.bids_index.remove(id.uid_to_inner());
+        let mut bid: Option<Bid> = option::none();
+        let length = bids.length();
+        let mut i = 0;
+        while (i < length) {
+            if (object::id(bids.borrow(i)) == bid_id) {
+                bid.destroy_none();
+                bid = option::some(bids.swap_remove(i));
 
-        marketplace.bids.swap_remove(index);
+                break
+            };
 
-        let new_len = marketplace.bids.length();
-
-        // Update index of swapped element
-        if (new_len > 0 && new_len != index) {
-            let moved_nft = marketplace.bids.borrow(index);
-
-            // Workaround to clone ID...
-            let new_id: ID = object::id_from_bytes(moved_nft.id_to_bytes());
-
-            // Remove first then re-add with correct value
-            let _: u64 = marketplace.bids_index.remove(new_id);
-            marketplace.bids_index.add(new_id, index);
+            i = i + 1;
         };
+
+        assert!(bid.is_some(), EBidNotFoundForNFTId);
+
+        if (bids.is_empty()) {
+            let v = marketplace.bids.remove<ID, vector<Bid>>(nft_id);
+            v.destroy_empty();
+        };
+
+        bid.destroy_some()
     }
 
     // === Test Functions ===
@@ -447,7 +422,7 @@ module nft_marketplace::nft_marketplace {
 
         scenario.next_tx(admin);
         {
-            let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
+            let marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             assert!(marketplace_id.is_some(), 1);
 
             let marketplace: Marketplace = scenario.take_shared<Marketplace>();
@@ -476,7 +451,7 @@ module nft_marketplace::nft_marketplace {
 
         let initial_owner = @0xCAFE;
 
-        let mut nft_id: ID = object::id_from_address(@0x0);
+        let nft_id: ID;
 
         let mut scenario = test_scenario::begin(initial_owner);
         {
@@ -533,7 +508,7 @@ module nft_marketplace::nft_marketplace {
 
         let initial_owner = @0xCAFE;
         let other_account = @0xFAFE;
-        let mut nft_id: ID = object::id_from_address(@0x0);
+        let nft_id: ID;
 
         // Init first
         let mut scenario = test_scenario::begin(initial_owner);
@@ -563,7 +538,7 @@ module nft_marketplace::nft_marketplace {
             let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
 
-    
+
             // Can not cancel the listing since it is not the owner
             let nft: TestnetNFT = cancel_listing(&mut marketplace, nft_id, scenario.ctx());
 
@@ -580,7 +555,7 @@ module nft_marketplace::nft_marketplace {
         use sui::test_utils::assert_eq;
 
         let initial_owner = @0xCAFE;
-        let mut nft_id: ID = object::id_from_address(@0x0);
+        let nft_id: ID;
 
 
         // Init first
@@ -635,8 +610,7 @@ module nft_marketplace::nft_marketplace {
 
         let initial_owner = @0xCAFE;
         let other_owner = @0xFAFE;
-        let mut nft_id1 = object::id_from_address(@0x0);
-        let mut nft_id2 = object::id_from_address(@0x0);
+        let nft_id1;
 
         // Init first
         let mut scenario = test_scenario::begin(initial_owner);
@@ -648,7 +622,6 @@ module nft_marketplace::nft_marketplace {
             transfer::public_transfer(nft, initial_owner);
 
             let nft = mint_to_sender(b"Name 2", b"Description 2", b"url 2", scenario.ctx());
-            nft_id2 = object::id(&nft);
             transfer::public_transfer(nft, other_owner);
         };
 
@@ -707,8 +680,7 @@ module nft_marketplace::nft_marketplace {
 
         let initial_owner = @0xCAFE;
         let other_owner = @0xFAFE;
-        let mut nft_id1 = object::id_from_address(@0x0);
-        let mut nft_id2 = object::id_from_address(@0x0);
+        let nft_id2;
 
         // Init first
         let mut scenario = test_scenario::begin(initial_owner);
@@ -716,7 +688,6 @@ module nft_marketplace::nft_marketplace {
             init(NFT_MARKETPLACE {}, scenario.ctx());
 
             let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-            nft_id1 = object::id(&nft);
             transfer::public_transfer(nft, initial_owner);
 
             let nft = mint_to_sender(b"Name 2", b"Description 2", b"url 2", scenario.ctx());
@@ -783,7 +754,7 @@ module nft_marketplace::nft_marketplace {
         let initial_owner = @0xCAFE;
         let other_account = @0xFAFE;
 
-        let mut nft_id = object::id_from_address(@0x0);
+        let nft_id;
 
         let mut scenario = test_scenario::begin(initial_owner);
         {
@@ -840,7 +811,7 @@ module nft_marketplace::nft_marketplace {
 
         let initial_owner = @0xCAFE;
         let other_account = @0xFAFE;
-        let mut nft_id = object::id_from_address(@0x0);
+        let nft_id;
 
         let mut scenario = test_scenario::begin(initial_owner);
         {
@@ -879,7 +850,7 @@ module nft_marketplace::nft_marketplace {
             assert!(marketplace_id.is_some(), 1);
 
             let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-        
+
             let coin = scenario.take_from_sender<Coin<SUI>>();
 
             let nft: TestnetNFT = buy(&mut marketplace, nft_id, coin, scenario.ctx());

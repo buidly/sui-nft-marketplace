@@ -2,7 +2,7 @@
 name = "nft_marketplace"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 version = "0.0.1"
-published-at = "0x2489b906bc22e49f084e1ef33a84cf48db4c38fd3c0da4a9e61ba497677b99c7"
+published-at = ""
 # license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
@@ -21,7 +21,7 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-nft_marketplace = "0x30a8e86de188c74a56495d19d0667a488289bb2a9a7c4ead7b046728ede3553e"
+nft_marketplace = "0x0"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

@@ -291,7 +291,7 @@ module nft_marketplace::nft_marketplace {
         nft
     }
 
-    public fun place_bid(marketplace: &mut Marketplace, nft_id: ID, coin: Coin<SUI>, ctx: &mut TxContext) {
+    public fun place_bid(marketplace: &mut Marketplace, nft_id: ID, coin: Coin<SUI>, ctx: &mut TxContext): ID {
         assert!(dof::exists_(&marketplace.id, nft_id), EInvalidNft);
 
         let sender = ctx.sender();
@@ -303,8 +303,10 @@ module nft_marketplace::nft_marketplace {
             owner: sender
         };
 
+        let bid_id = object::id(&bid);
+
         event::emit(BidCreated {
-            object_id: object::id(&bid),
+            object_id: bid_id,
             nft_id,
             price: bid.balance.value(),
             creator: sender,
@@ -315,7 +317,9 @@ module nft_marketplace::nft_marketplace {
             elements.push_back(bid);
         } else {
             marketplace.bids.add<ID, vector<Bid>>(nft_id, vector::singleton(bid));
-        }
+        };
+
+        bid_id
     }
 
     public fun cancel_bid(marketplace: &mut Marketplace, nft_id: ID, bid_id: ID, ctx: &mut TxContext): Coin<SUI> {
@@ -340,8 +344,8 @@ module nft_marketplace::nft_marketplace {
 
     public fun accept_bid<N: key + store>(
         marketplace: &mut Marketplace,
-        bid_id: ID,
         nft_id: ID,
+        bid_id: ID,
         ctx: &mut TxContext
     ): Coin<SUI> {
         let sender = ctx.sender();
@@ -881,6 +885,7 @@ module nft_marketplace::nft_marketplace {
         scenario.next_tx(initial_owner);
         assert_eq(effects.num_user_events(), 1); // 1 event emitted
 
+        // Bid gets added to vector under Table
         {
             let marketplace: Marketplace = scenario.take_shared<Marketplace>();
             let bids: &vector<Bid> = marketplace.bids.borrow<ID, vector<Bid>>(nft_id);
@@ -904,444 +909,548 @@ module nft_marketplace::nft_marketplace {
 
         scenario.end();
     }
-    //
-    // #[test]
-    // #[expected_failure(abort_code = EInvalidOwner)]
-    // fun test_cancel_bid_error() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_account = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     scenario.next_tx(other_account);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //         assert_eq(marketplace.listings.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Cancel bid error
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid_id = test_scenario::most_recent_id_shared<Bid>();
-    //         assert!(bid_id.is_some(), 1);
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid_id.extract());
-    //
-    //         // Can not cancel the listing since it is not the owner
-    //         let coin: Coin<SUI> = cancel_bid(&mut marketplace, bid, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, initial_owner);
-    //     };
-    //
-    //     scenario.end();
-    // }
-    //
-    // #[test]
-    // fun test_cancel_bid() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_account = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     scenario.next_tx(other_account);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //         assert_eq(marketplace.listings.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Cancel bid
-    //     scenario.next_tx(other_account);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid_id = test_scenario::most_recent_id_shared<Bid>();
-    //         assert!(bid_id.is_some(), 1);
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid_id.extract());
-    //
-    //         // Can not cancel the listing since it is not the owner
-    //         let coin: Coin<SUI> = cancel_bid(&mut marketplace, bid, scenario.ctx());
-    //
-    //         assert_eq(marketplace.listings.length(), 0);
-    //         assert_eq(marketplace.bids.length(), 0);
-    //         assert_eq(marketplace.bids_index.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, other_account);
-    //     };
-    //
-    //     let effects = scenario.next_tx(initial_owner);
-    //     assert_eq(effects.num_user_events(), 1); // 1 event emitted
-    //
-    //     scenario.end();
-    // }
-    //
-    // #[test]
-    // fun test_cancel_bid_multiple_first() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_owner = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     // Place bid 1
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Place bid 2
-    //     scenario.next_tx(other_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Get id of 1st bid before listing 2 transaction is finished
-    //     let mut bid1_id = test_scenario::most_recent_id_shared<Bid>();
-    //     assert!(bid1_id.is_some(), 1);
-    //
-    //     // Cancel bid 1
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid2_id = test_scenario::most_recent_id_shared<Bid>();
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid1_id.extract());
-    //
-    //         let coin: Coin<SUI> = cancel_bid(&mut marketplace, bid, scenario.ctx());
-    //
-    //         // Assert deleted correctly and indexes updated correctly
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert!(marketplace.bids.borrow(0) == bid2_id.borrow(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //         assert!(marketplace.bids_index.borrow(bid2_id.extract()) == 0, 1);
-    //
-    //         assert_eq(marketplace.listings.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, initial_owner);
-    //     };
-    //
-    //     let effects = scenario.next_tx(initial_owner);
-    //     assert_eq(effects.num_user_events(), 1); // 1 event emitted
-    //
-    //     scenario.end();
-    // }
-    //
-    // #[test]
-    // fun test_cancel_bid_multiple_second() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_owner = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     // Place bid 1
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Place bid 2
-    //     scenario.next_tx(other_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Get id of 1st bid before listing 2 transaction is finished
-    //     let mut bid1_id = test_scenario::most_recent_id_shared<Bid>();
-    //     assert!(bid1_id.is_some(), 1);
-    //
-    //     // Cancel bid 2
-    //     scenario.next_tx(other_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid2_id = test_scenario::most_recent_id_shared<Bid>();
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid2_id.extract());
-    //
-    //         let coin: Coin<SUI> = cancel_bid(&mut marketplace, bid, scenario.ctx());
-    //
-    //         // Assert deleted correctly and indexes updated correctly
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert!(marketplace.bids.borrow(0) == bid1_id.borrow(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //         assert!(marketplace.bids_index.borrow(bid1_id.extract()) == 0, 1);
-    //
-    //         assert_eq(marketplace.listings.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, other_owner);
-    //     };
-    //
-    //     let effects = scenario.next_tx(initial_owner);
-    //     assert_eq(effects.num_user_events(), 1); // 1 event emitted
-    //
-    //     scenario.end();
-    // }
-    //
-    // #[test]
-    // #[expected_failure(abort_code = EInvalidNft)]
-    // fun test_accept_bid_error() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_account = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //
-    //         // Mint another nft which will be sent instead
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     // Create bid
-    //     scenario.next_tx(other_account);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //         assert_eq(marketplace.listings.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Accept with error
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid_id = test_scenario::most_recent_id_shared<Bid>();
-    //         assert!(bid_id.is_some(), 1);
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid_id.extract());
-    //         let nft = scenario.take_from_sender<TestnetNFT>();
-    //
-    //         let coin: Coin<SUI> = accept_bid(&mut marketplace, bid, nft, scenario.ctx());
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, initial_owner);
-    //     };
-    //
-    //     scenario.end();
-    // }
-    //
-    // #[test]
-    // fun test_accept_bid() {
-    //     use sui::test_scenario;
-    //     use sui::test_utils::assert_eq;
-    //
-    //     let initial_owner = @0xCAFE;
-    //     let other_account = @0xFAFE;
-    //
-    //     let nft_id: ID;
-    //
-    //     let mut scenario = test_scenario::begin(initial_owner);
-    //     {
-    //         init(NFT_MARKETPLACE {}, scenario.ctx());
-    //
-    //         let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
-    //
-    //         nft_id = object::id(&nft);
-    //
-    //         transfer::public_transfer(nft, initial_owner);
-    //     };
-    //
-    //     // Place listing
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //         let nft = scenario.take_from_sender<TestnetNFT>();
-    //
-    //         place_listing(&mut marketplace, nft, 10, scenario.ctx());
-    //
-    //         assert_eq(marketplace.listings.length(), 1);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Create bid
-    //     scenario.next_tx(other_account);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
-    //
-    //         place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
-    //
-    //         assert_eq(marketplace.bids.length(), 1);
-    //         assert_eq(marketplace.bids_index.length(), 1);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //     };
-    //
-    //     // Accept
-    //     scenario.next_tx(initial_owner);
-    //     {
-    //         let mut marketplace_id = test_scenario::most_recent_id_shared<Marketplace>();
-    //         let mut marketplace: Marketplace = scenario.take_shared_by_id(marketplace_id.extract());
-    //
-    //         let mut bid_id = test_scenario::most_recent_id_shared<Bid>();
-    //         assert!(bid_id.is_some(), 1);
-    //
-    //         let bid: Bid = scenario.take_shared_by_id(bid_id.extract());
-    //
-    //         let coin: Coin<SUI> = accept_bid_with_listing<TestnetNFT>(&mut marketplace, bid, nft_id, scenario.ctx());
-    //
-    //         assert_eq(marketplace.listings.length(), 0);
-    //         assert_eq(marketplace.bids.length(), 0);
-    //         assert_eq(marketplace.bids_index.length(), 0);
-    //
-    //         test_scenario::return_shared(marketplace);
-    //         transfer::public_transfer(coin, initial_owner);
-    //     };
-    //
-    //     let effects = scenario.next_tx(other_account);
-    //     assert_eq(effects.num_user_events(), 1); // 1 event emitted
-    //
-    //     // Other account got initial nft
-    //     {
-    //         let nft = scenario.take_from_sender<TestnetNFT>();
-    //
-    //         assert!(nft.name() == string::utf8(b"Name"), 1);
-    //         assert!(nft.description() == string::utf8(b"Description"), 1);
-    //         assert!(nft.url() == url::new_unsafe_from_bytes(b"url"), 1);
-    //         assert!(nft.creator() == initial_owner, 1);
-    //
-    //         scenario.return_to_sender(nft);
-    //     };
-    //
-    //     scenario.end();
-    // }
+
+    #[test]
+    #[expected_failure(abort_code = EBidNotFoundForNFTId)]
+    fun test_cancel_bid_error_no_nft_bids() {
+        use sui::test_scenario;
+
+        let initial_owner = @0xCAFE;
+
+        let nft_id: ID;
+        let bid_id: ID = object::id_from_address(@0xAAAA);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Cancel bid error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EBidNotFoundForNFTId)]
+    fun test_cancel_bid_error_invalid_id() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_account = @0xFAFE;
+
+        let nft_id: ID;
+        let bid_id: ID = object::id_from_address(@0xAAAA);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
+
+            let _ = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1);
+            assert_eq(marketplace.listings.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Cancel bid error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EInvalidOwner)]
+    fun test_cancel_bid_error_owner() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_account = @0xFAFE;
+
+        let nft_id: ID;
+        let bid_id: ID;
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
+
+            bid_id = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1);
+            assert_eq(marketplace.listings.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Cancel bid error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    fun test_cancel_bid() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_account = @0xFAFE;
+
+        let nft_id: ID;
+        let bid1_id: ID;
+        let bid2_id: ID;
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create first bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
+
+            bid1_id = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1);
+            assert_eq(marketplace.listings.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create second bid same nft
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(20000000, scenario.ctx());
+
+            bid2_id = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1); // length stays the same
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.borrow(nft_id).length(), 2);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Cancel first bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            // Can not cancel the listing since it is not the owner
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid1_id, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 1); // length still remains
+            assert_eq(marketplace.bids.borrow(nft_id).length(), 1);
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, other_account);
+        };
+
+        // Cancel second bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            // Can not cancel the listing since it is not the owner
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid2_id, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, other_account);
+        };
+
+        let effects = scenario.next_tx(initial_owner);
+        assert_eq(effects.num_user_events(), 1); // 1 event emitted
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EInvalidNft)]
+    fun test_accept_bid_error_no_listing() {
+        use sui::test_scenario;
+
+        let initial_owner = @0xCAFE;
+
+        let nft_id: ID = object::id_from_address(@0xAAAA);
+        let bid_id: ID = object::id_from_address(@0xBBBB);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+        };
+
+        // Accept with error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = accept_bid<TestnetNFT>(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EInvalidOwner)]
+    fun test_accept_bid_error_not_owner() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_owner = @0xFAFE;
+
+        let nft_id: ID;
+        let bid_id: ID = object::id_from_address(@0xBBBB);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Accept with error
+        scenario.next_tx(other_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = accept_bid<TestnetNFT>(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EBidNotFoundForNFTId)]
+    fun test_accept_bid_error_no_nft_bids() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+
+        let nft_id: ID;
+        let bid_id: ID = object::id_from_address(@0xAAAA);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Accept bid error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EBidNotFoundForNFTId)]
+    fun test_accept_bid_error_invalid_id() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_account = @0xFAFE;
+
+        let nft_id: ID;
+        let bid_id: ID = object::id_from_address(@0xAAAA);
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing first
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
+
+            let _ = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1);
+            assert_eq(marketplace.listings.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Cancel bid error
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            // Can not cancel the bid since bid_id is incorrect
+            let coin: Coin<SUI> = cancel_bid(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        scenario.end();
+    }
+
+    #[test]
+    fun test_accept_bid() {
+        use sui::test_scenario;
+        use sui::test_utils::assert_eq;
+
+        let initial_owner = @0xCAFE;
+        let other_account = @0xFAFE;
+
+        let nft_id: ID;
+        let bid_id: ID;
+
+        let mut scenario = test_scenario::begin(initial_owner);
+        {
+            init(NFT_MARKETPLACE {}, scenario.ctx());
+
+            let nft = mint_to_sender(b"Name", b"Description", b"url", scenario.ctx());
+
+            nft_id = object::id(&nft);
+
+            transfer::public_transfer(nft, initial_owner);
+        };
+
+        // Place listing
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            place_listing(&mut marketplace, nft, 10, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Create bid
+        scenario.next_tx(other_account);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+            let coin = coin::mint_for_testing<SUI>(10000000, scenario.ctx());
+
+            bid_id = place_bid(&mut marketplace, nft_id, coin, scenario.ctx());
+
+            assert_eq(marketplace.bids.length(), 1);
+
+            test_scenario::return_shared(marketplace);
+        };
+
+        // Accept
+        scenario.next_tx(initial_owner);
+        {
+            let mut marketplace: Marketplace = scenario.take_shared<Marketplace>();
+
+            let coin: Coin<SUI> = accept_bid<TestnetNFT>(&mut marketplace, nft_id, bid_id, scenario.ctx());
+
+            assert_eq(marketplace.listings.length(), 0);
+            assert_eq(marketplace.bids.length(), 0);
+
+            test_scenario::return_shared(marketplace);
+            transfer::public_transfer(coin, initial_owner);
+        };
+
+        let effects = scenario.next_tx(other_account);
+        assert_eq(effects.num_user_events(), 1); // 1 event emitted
+
+        // Other account got initial nft
+        {
+            let nft = scenario.take_from_sender<TestnetNFT>();
+
+            assert!(nft.name() == string::utf8(b"Name"), 1);
+            assert!(nft.description() == string::utf8(b"Description"), 1);
+            assert!(nft.url() == url::new_unsafe_from_bytes(b"url"), 1);
+            assert!(nft.creator() == initial_owner, 1);
+
+            scenario.return_to_sender(nft);
+        };
+
+        scenario.end();
+    }
 }

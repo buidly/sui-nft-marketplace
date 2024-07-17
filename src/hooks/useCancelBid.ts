@@ -18,7 +18,7 @@ export const useCancelBid = (onCancelBid: () => void) => {
     if (!account) {
       return;
     }
-    console.log({ bidObjectId, nftId });
+
     const txb = new TransactionBlock();
 
     const coin = txb.moveCall({

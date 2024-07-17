@@ -31,7 +31,6 @@ export const useGetBidsDetails = (
       .flatMap(item => {
         const { fields } = (item?.data?.content as any);
         return fields?.value?.map((bid: any) => {
-          console.log({ bid });
           return {
             bidId: bid.fields.id.id,
             balance: bid.fields.balance,
@@ -41,9 +40,6 @@ export const useGetBidsDetails = (
         });
       });
   }, [bidsData, nftId]);
-
-
-  console.log({ bidsNeeded });
 
   return { data: bidsNeeded as Bid[], isPending: isPending && fetchStatus !== "idle", error };
 };

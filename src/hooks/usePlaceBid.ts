@@ -48,7 +48,6 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              console.log({ tx });
               toast.success("Bid placed with success.", {
                 autoClose: 1500,
                 position: "bottom-right",

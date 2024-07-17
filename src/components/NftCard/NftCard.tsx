@@ -26,16 +26,15 @@ export const NftCard = ({ objectId }: NftCard) => {
       onClick={() =>
         navigate(routeNames.nftDetails.replace(":objectId", objectId))
       }
-      className="flex flex-col p-3 rounded-lg shadow-md bg-gray-700 bg-opacity-25 hover:bg-opacity-75 transition duration-300 min-w-[250px] min-h-[260px] cursor-pointer"
+      className="flex flex-col items-center rounded-lg shadow-md bg-gray-700 bg-opacity-25 hover:bg-opacity-75 transition duration-300 w-[45%] md:min-w-[250px] md:min-h-[260px] cursor-pointer"
     >
-      <img
-        className="object-cover rounded-lg h-[200px] w-[257px]"
-        src={nft.url}
-      />
-      <span className="font-bold text-sm mt-3">{nft.name}</span>
-      <span className="font-bold text-sm">
-        Price: {priceDenom.toFixed()} SUI
-      </span>
+      <img className="object-cover rounded-t-lg h-auto w-auto" src={nft.url} />
+      <div className="flex flex-col justify-start w-full p-3 gap-y-1">
+        <span className="font-bold text-sm text-left w-full">{nft.name}</span>
+        <span className="font-bold text-sm text-left w-full">
+          {priceDenom.toFixed()} SUI
+        </span>
+      </div>
     </div>
   );
 };

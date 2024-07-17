@@ -27,9 +27,9 @@ export const Home = () => {
 
   return (
     <div className="px-3">
-      <span className="text-lg font-bold">Explore NFTs</span>
-      <div className="grid-auto-fit mt-3">
-        {listings.map((objectId: string) => (
+      <span className="text-lg font-bold px-3">Explore NFTs</span>
+      <div className="flex flex-wrap justify-center gap-2 md:justify-center md:grid-auto-fit mt-3">
+        {listings?.map((objectId: string) => (
           <NftCard key={objectId} objectId={objectId} />
         ))}
       </div>

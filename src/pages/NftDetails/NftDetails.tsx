@@ -125,7 +125,7 @@ export const NftDetails = () => {
                 type="number"
                 min={0}
                 className="w-full px-3 py-2 border rounded-lg"
-                placeholder={`Bid amount`}
+                placeholder={`Offer amount`}
                 value={newBid}
                 onChange={(e) => setNewBid(e.target.value)}
               />

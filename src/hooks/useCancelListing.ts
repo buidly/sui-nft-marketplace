@@ -10,7 +10,7 @@ export const useCancelListing = (onSuccess: () => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const cancelListing = (objectId: string, type: string) => {
+  const cancelListing = (nftId: string, type: string) => {
     if (!account) {
       return;
     }
@@ -20,7 +20,7 @@ export const useCancelListing = (onSuccess: () => void) => {
     const nft = txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
-        txb.pure(objectId),
+        txb.pure(nftId),
       ],
       target: `${marketplacePackageId}::nft_marketplace::cancel_listing`,
       typeArguments: [type]

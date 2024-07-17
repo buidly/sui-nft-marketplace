@@ -19,21 +19,21 @@ export const NftDetails = () => {
   const navigate = useNavigate();
   const { nft, isPending, error } = useGetNftDetails(objectId!);
   const {
-    bidsData,
+    bids,
     isPending: isPendingListings,
     error: isErrorListings,
-    refetch,
+    refetchBids,
   } = useGetListings();
   const {
     data: bidsNeeded,
     isPending: isPendingBidDetails,
     error: errorGetBidDetails,
-  } = useGetBidsDetails(bidsData ? (bidsData as string[]) : [], nft?.id);
+  } = useGetBidsDetails(bids, nft?.id);
   const buy = useBuyNft(() => {
     navigate(routeNames.home);
   });
   const cancelBid = useCancelBid(() => {
-    refetch();
+    refetchBids();
   });
   const acceptBid = useAcceptBid(() => {
     navigate(routeNames.home);
@@ -42,7 +42,7 @@ export const NftDetails = () => {
     navigate(routeNames.home);
   });
   const placeBid = usePlaceBid(() => {
-    refetch();
+    refetchBids();
   });
 
   const [showBidField, setShowBidField] = useState(false);
@@ -73,7 +73,11 @@ export const NftDetails = () => {
   return (
     <div className="flex flex-col-reverse md:flex-row">
       <div className="w-full md:w-1/2 p-6">
-        <img src={nft.url} alt="NFT" className="w-full h-4/5 object-cover" />
+        <img
+          src={nft.url}
+          alt="NFT"
+          className="w-full h-4/5 object-cover max-h-[600px]"
+        />
       </div>
       <div className="w-full md:w-1/2 p-6 flex flex-col">
         <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-4">
@@ -89,7 +93,7 @@ export const NftDetails = () => {
           <div className="flex space-x-4 mb-4">
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-              onClick={() => objectId && buy(objectId, nft.price, nft.type)}
+              onClick={() => buy(nft.id, nft.price, nft.type)}
             >
               Buy
             </button>
@@ -102,7 +106,7 @@ export const NftDetails = () => {
             {nft.owner === account?.address && (
               <button
                 className={`px-4 py-2 bg-red-500 text-white rounded-lg`}
-                onClick={() => objectId && cancelListing(objectId, nft.type)}
+                onClick={() => cancelListing(nft.id, nft.type)}
               >
                 Cancel listing
               </button>
@@ -143,9 +147,7 @@ export const NftDetails = () => {
                   {nft.owner === account?.address && (
                     <button
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                      onClick={() =>
-                        objectId && acceptBid(bid.bidId, objectId, nft.type)
-                      }
+                      onClick={() => acceptBid(bid.bidId, bid.nft_id, nft.type)}
                     >
                       Accept bid
                     </button>
@@ -153,7 +155,7 @@ export const NftDetails = () => {
                   {bid.owner === account?.address && (
                     <button
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                      onClick={() => cancelBid(bid.bidId)}
+                      onClick={() => cancelBid(bid.bidId, nft.id)}
                     >
                       Cancel bid
                     </button>

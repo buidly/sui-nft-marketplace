@@ -3,7 +3,7 @@ import { NftCard } from "../../components/NftCard";
 import { useGetListings } from "../../hooks/useGetListings";
 
 export const Home = () => {
-  const { data, isPending, error } = useGetListings();
+  const { listings, isPending, error } = useGetListings();
 
   if (isPending) {
     return <Loader />;
@@ -17,7 +17,7 @@ export const Home = () => {
     );
   }
 
-  if (data.length === 0) {
+  if (listings.length === 0) {
     return (
       <span className="text-lg font-bold mx-3">
         There are no NFTs listed yet
@@ -29,7 +29,7 @@ export const Home = () => {
     <div className="px-3">
       <span className="text-lg font-bold">Explore NFTs</span>
       <div className="grid-auto-fit mt-3">
-        {data?.map((objectId: string) => (
+        {listings.map((objectId: string) => (
           <NftCard key={objectId} objectId={objectId} />
         ))}
       </div>

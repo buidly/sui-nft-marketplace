@@ -14,7 +14,7 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const acceptBid = (bidObjectId: string, objectId: string, type: string) => {
+  const acceptBid = (bidObjectId: string, nftId: string, type: string) => {
     if (!account) {
       return;
     }
@@ -24,10 +24,10 @@ export const useAcceptBid = (onAcceptBid: () => void) => {
     const coin = txb.moveCall({
       arguments: [
         txb.object(marketplaceObjectId),
+        txb.pure(nftId),
         txb.pure(bidObjectId),
-        txb.object(objectId),
       ],
-      target: `${marketplacePackageId}::nft_marketplace::accept_bid_with_listing`,
+      target: `${marketplacePackageId}::nft_marketplace::accept_bid`,
       typeArguments: [type],
     });
 

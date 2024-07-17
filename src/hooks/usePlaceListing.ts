@@ -58,10 +58,7 @@ export const usePlaceListing = (onListed: (id: string) => void) => {
                 draggable: false,
               });
 
-              const object = tx.effects?.created?.find((createdObject => {
-                return (createdObject.owner as any).Shared != null;
-              }));
-              const objectId = object?.reference?.objectId;
+              const objectId = tx.effects?.created?.[0]?.reference?.objectId;
 
               if (objectId) {
                 onListed(objectId);

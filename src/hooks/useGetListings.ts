@@ -3,7 +3,7 @@ import { useNetworkVariable } from "../networkConfig";
 
 export const useGetListings = () => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
-  const { data, isPending, error, refetch } = useSuiClientQuery("getObject", {
+  const { data: marketplaceData, isPending: marketplacePending, error: marketplaceError } = useSuiClientQuery("getObject", {
     id: marketplaceObjectId,
     options: {
       showContent: true,
@@ -12,15 +12,24 @@ export const useGetListings = () => {
   });
 
   const marketplaceFields =
-    data?.data?.content?.dataType === "moveObject"
-      ? (data.data.content.fields as any)
+    marketplaceData?.data?.content?.dataType === "moveObject"
+      ? (marketplaceData.data.content.fields as any)
       : null;
 
+  const { data: listings, isPending: listingsPending, error: listingsError, refetch: refetchListings } = useSuiClientQuery("getDynamicFields", {
+    parentId: marketplaceFields?.listings?.fields?.id?.id,
+  }, { enabled: marketplaceFields != null });
+
+  const { data: bids, isPending: bidsPending, error: bidsError, refetch: refetchBids } = useSuiClientQuery("getDynamicFields", {
+    parentId: marketplaceFields?.bids?.fields?.id?.id,
+  }, { enabled: marketplaceFields != null });
+
   return {
-    data: marketplaceFields?.listings,
-    bidsData: marketplaceFields?.bids,
-    isPending,
-    error,
-    refetch,
+    listings: listings?.data?.map(obj => obj.objectId) ?? [],
+    bids: bids?.data?.map(obj => obj.objectId) ?? [],
+    isPending: marketplacePending || listingsPending || bidsPending,
+    error: marketplaceError || listingsError || bidsError,
+    refetchListings,
+    refetchBids,
   };
 };

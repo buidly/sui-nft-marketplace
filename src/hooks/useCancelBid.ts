@@ -14,15 +14,15 @@ export const useCancelBid = (onCancelBid: () => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const cancelBid = (bidObjectId: string) => {
+  const cancelBid = (bidObjectId: string, nftId: string) => {
     if (!account) {
       return;
     }
-    console.log(bidObjectId);
+
     const txb = new TransactionBlock();
 
     const coin = txb.moveCall({
-      arguments: [txb.object(marketplaceObjectId), txb.pure(bidObjectId)],
+      arguments: [txb.object(marketplaceObjectId), txb.pure(nftId), txb.pure(bidObjectId)],
       target: `${marketplacePackageId}::nft_marketplace::cancel_bid`,
     });
 

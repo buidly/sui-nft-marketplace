@@ -22,21 +22,21 @@ export const NftDetails = () => {
   const navigate = useNavigate();
   const { nft, isPending, error } = useGetNftDetails(objectId!);
   const {
-    bidsData,
+    bids,
     isPending: isPendingListings,
     error: isErrorListings,
-    refetch,
+    refetchBids,
   } = useGetListings();
   const {
     data: bidsNeeded,
     isPending: isPendingBidDetails,
     error: errorGetBidDetails,
-  } = useGetBidsDetails(bidsData ? (bidsData as string[]) : [], nft?.id);
+  } = useGetBidsDetails(bids, nft?.id);
   const buy = useBuyNft(() => {
     navigate(routeNames.home);
   });
   const cancelBid = useCancelBid(() => {
-    refetch();
+    refetchBids();
   });
   const acceptBid = useAcceptBid(() => {
     navigate(routeNames.home);
@@ -45,7 +45,7 @@ export const NftDetails = () => {
     navigate(routeNames.home);
   });
   const placeBid = usePlaceBid(() => {
-    refetch();
+    refetchBids();
   });
 
   const [showBidField, setShowBidField] = useState(false);
@@ -97,7 +97,7 @@ export const NftDetails = () => {
           <div className="flex flex-col md:flex-row gap-x-2 gap-y-2 mb-4">
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-lg grow md:w-2/6 flex flex-row items-center justify-center gap-x-2"
-              onClick={() => objectId && buy(objectId, nft.price, nft.type)}
+              onClick={() => buy(nft.id, nft.price, nft.type)}
             >
               <img src={cartIcon} className="h-5" />
               Buy Now
@@ -112,7 +112,7 @@ export const NftDetails = () => {
             {nft.owner === account?.address && (
               <button
                 className={`grow md:w-2/6 px-4 py-2 bg-zinc-800 border border-red-500 text-white rounded-lg flex flex-row items-center justify-center gap-x-2`}
-                onClick={() => objectId && cancelListing(objectId, nft.type)}
+                onClick={() => cancelListing(nft.id, nft.type)}
               >
                 <img src={trashIcon} className="h-5" />
                 Cancel listing
@@ -156,9 +156,7 @@ export const NftDetails = () => {
                   {nft.owner === account?.address && (
                     <button
                       className="px-4 py-2 bg-zinc-800 border border-blue-500  text-white rounded-lg"
-                      onClick={() =>
-                        objectId && acceptBid(bid.bidId, objectId, nft.type)
-                      }
+                      onClick={() => acceptBid(bid.bidId, bid.nft_id, nft.type)}
                     >
                       Accept offer
                     </button>
@@ -166,7 +164,7 @@ export const NftDetails = () => {
                   {bid.owner === account?.address && (
                     <button
                       className="px-4 py-2 bg-zinc-800 border border-red-500 text-white rounded-lg flex flex-row items-center justify-center gap-x-2"
-                      onClick={() => cancelBid(bid.bidId)}
+                      onClick={() => cancelBid(bid.bidId, nft.id)}
                     >
                       <img src={trashIcon} className="h-5" />
                       Cancel Offer

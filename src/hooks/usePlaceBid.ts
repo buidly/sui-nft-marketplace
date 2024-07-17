@@ -16,7 +16,7 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
   const marketplaceObjectId = useNetworkVariable("marketplaceObjectId");
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
 
-  const placeBid = (objectId: string, price: string) => {
+  const placeBid = (nftId: string, price: string) => {
     if (!account) {
       return;
     }
@@ -27,7 +27,7 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
     ]);
 
     txb.moveCall({
-      arguments: [txb.object(marketplaceObjectId), txb.pure(objectId), coin],
+      arguments: [txb.object(marketplaceObjectId), txb.pure(nftId), coin],
       target: `${marketplacePackageId}::nft_marketplace::place_bid`,
     });
 
@@ -48,7 +48,6 @@ export const usePlaceBid = (onPlaceBid: () => void) => {
               digest: tx.digest,
             })
             .then(() => {
-              console.log({ tx });
               toast.success("Bid placed with success.", {
                 autoClose: 1500,
                 position: "bottom-right",

@@ -10,6 +10,7 @@ export const useGetBidsDetails = (
     data: bidsData,
     isPending,
     error,
+    fetchStatus,
   } = useSuiClientQuery(
     "multiGetObjects",
     {
@@ -26,17 +27,19 @@ export const useGetBidsDetails = (
     if (!bidsData) return undefined;
 
     return bidsData
-      .map((item: any) => {
-        const { fields } = item.data.content;
-        return {
-          bidId: item.data.objectId,
-          balance: fields.balance,
-          owner: fields.owner,
-          nft_id: fields.nft_id,
-        };
-      })
-      .filter((item) => item.nft_id === nftId);
+      .filter(item => (item?.data?.content as any)?.fields?.name === nftId)
+      .flatMap(item => {
+        const { fields } = (item?.data?.content as any);
+        return fields?.value?.map((bid: any) => {
+          return {
+            bidId: bid.fields.id.id,
+            balance: bid.fields.balance,
+            owner: bid.fields.owner,
+            nft_id: bid.fields.nft_id,
+          };
+        });
+      });
   }, [bidsData, nftId]);
 
-  return { data: bidsNeeded as Bid[], isPending, error };
+  return { data: bidsNeeded as Bid[], isPending: isPending && fetchStatus !== "idle", error };
 };

@@ -11,30 +11,23 @@ export const useGetNftDetails = (objectId: string) => {
     },
   });
 
-  const { data: dynamicFieldsData, isPending: dynamicFieldsPending, error: dynamicFieldsError } = useSuiClientQuery("getDynamicFields", {
-    parentId: objectId,
-  });
+  const objectFields =
+    objectData?.data?.content?.dataType === "moveObject"
+      ? (objectData.data.content.fields as any)
+      : null;
 
-  const dynamicFieldObjectId = dynamicFieldsData?.data?.[0]?.objectId;
-
-  const { data: nftData, isPending: nftPending, error: nftError } = useSuiClientQuery("multiGetObjects", {
-    ids: [dynamicFieldObjectId!!],
+  const { data: nftData, isPending: nftPending, error: nftError } = useSuiClientQuery("getObject", {
+    id: objectFields?.value?.fields?.nft_id,
     options: {
       showContent: true,
       showOwner: true,
     },
-  }, { enabled: dynamicFieldsData?.data?.[0] != null });
-
+  }, { enabled: objectFields?.value?.fields != null });
 
   const nft = useMemo(() => {
     const nftFields =
-      nftData?.[0]?.data?.content?.dataType === "moveObject"
-        ? (nftData[0].data.content.fields as any)
-        : null;
-
-    const objectFields =
-      objectData?.data?.content?.dataType === "moveObject"
-        ? (objectData.data.content.fields as any)
+      nftData?.data?.content?.dataType === "moveObject"
+        ? (nftData.data.content.fields as any)
         : null;
 
     if (!nftFields || !objectFields) {
@@ -47,16 +40,16 @@ export const useGetNftDetails = (objectId: string) => {
       description: nftFields.description,
       url: nftFields.url,
       creator: nftFields.creator,
-      price: objectFields.price,
-      owner: objectFields.owner,
-      type: (nftData?.[0].data?.content as any)?.type ?? ''
+      price: objectFields.value.fields.price,
+      owner: objectFields.value.fields.owner,
+      type: (nftData?.data?.content as any)?.type ?? ''
     } as NftWithPrice;
   }, [objectData, nftData]);
 
 
   return {
     nft,
-    isPending: objectPending || dynamicFieldsPending || nftPending,
-    error: objectError || dynamicFieldsError || nftError
+    isPending: objectPending || nftPending,
+    error: objectError || nftError
   };
 };
